@@ -1,0 +1,13 @@
+key,label,calc_base,value
+xray,Рентген,DO,1.0
+ultrasound,УЗИ,DO,0.6
+infectious,Инфекционное отделение,DO,0.2
+palliative,Паллиатив,DO,0.4
+anesthesia_icu,Анестезиология и реанимация,DO,0.2
+transfusiology,Трансфузиология,DO,0.2
+endoscopy,Эндоскопия,DO,0.2
+physiotherapy,Физиотерапия,DO,0.2
+lab_clinical,Клинико-диагностическая лаборатория,DO,0.4
+lab_bacterio,Бактериологическая лаборатория,DO,0.4
+lab_cytology,Цитологическая лаборатория,DO,0.4
+morgue_pathology,Морг и патоморфологическая лаборатория,DO,0.6
