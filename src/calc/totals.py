@@ -1,29 +1,16 @@
-"""
-Модуль для подсчёта итоговой зарплаты.
-"""
+# src/calc/totals.py
+from __future__ import annotations
+from ..utils.data_loader import load_settings
 
-BDO = 17697  # базовый должностной оклад (2025)
-MRP = 3932   # минимальный расчётный показатель (2025)
+S = load_settings()
+BDO = float(S["BDO"])
 
-def get_role_coeff(role: str) -> float:
-    if role == "врач":
-        return 3.42
-    elif role == "сестра":
-        return 2.34
-    else:
-        return 2.0  # по умолчанию младший персонал
+def role_coeff(role: str) -> float:
+    return float(S["role_coefficients"].get(role, 2.0))
 
-def calc_total(ets_coeff: float, role: str, **kwargs) -> float:
-    """
-    ets_coeff: коэффициент ЕТС
-    role: 'врач' | 'сестра'
-    kwargs: значения k1..k6 и special
-    """
-    base = BDO * ets_coeff * get_role_coeff(role)
-    total = base
+def base_amount(ets_coeff: float, role: str) -> float:
+    return BDO * float(ets_coeff) * role_coeff(role)
 
-    # Складываем надбавки
-    for k in kwargs.values():
-        total += k * BDO if k < 5 else k * MRP  # ДО vs МРП
-
-    return total
+def total_amount(ets_coeff: float, role: str, *allowances: float) -> float:
+    # allowances — уже суммы в тенге (К1..К6 и «особые условия»)
+    return base_amount(ets_coeff, role) + sum(float(x) for x in allowances)
