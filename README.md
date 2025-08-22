@@ -1,0 +1,1 @@
+# med-salary-bot-kz
