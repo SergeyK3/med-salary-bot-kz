@@ -1,0 +1,33 @@
+name: tests
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install -U pip
+      - name: Install deps from requirements.txt
+        if: hashFiles('requirements.txt') != ''
+        run: pip install -r requirements.txt
+      - name: Install minimal deps
+        if: hashFiles('requirements.txt') == ''
+        run: pip install pytest pandas pyyaml
+      - run: pytest -q
