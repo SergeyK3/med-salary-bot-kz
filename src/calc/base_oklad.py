@@ -5,36 +5,10 @@ from ..utils.data_loader import load_ets_table
 
 Role = Literal["врач", "сестра"]
 
-__all__ = ["get_ets_coeff", "role_to_group", "category_to_num"]
+__all__ = ["get_ets_coeff", "get_ets_coeff_by_role", "role_to_group", "category_to_num"]
 
-def get_ets_coeff(group: str, category: int, years: float) -> float:
-    """
-    Возвращает коэффициент ЕТС по группе (B2/B3/B4), категории (1..4) и стажу (годы).
-    Правило интервала: band_from <= years < band_to; для '>25' у нас band_to=999.
-    """
-    g = str(group).upper().strip()
-    try:
-        cat = int(category)
-    except Exception as e:
-        raise ValueError(f"Некорректная категория: {category}") from e
 
-    df = load_ets_table()
-    # фильтр по группе и категории
-    d = df[(df["group"] == g) & (df["category"] == cat)]
-    if d.empty:
-        raise ValueError(f"Не найдена группа/категория: {g}/{cat}")
-
-    # фильтр по стажу (включая нижнюю, исключая верхнюю границу)
-    m = d[(d["band_from"] <= years) & (years < d["band_to"])]
-    if m.empty:
-        # на всякий случай для граничных значений берём максимальный коридор
-        m = d[d["band_from"] == d["band_from"].max()]
-    if m.empty:
-        raise ValueError(f"Не найден коридор стажа для {g}/{cat}, years={years}")
-
-    return float(m.iloc[0]["coeff"])
-
-def role_to_group(role: str, education: str | None) -> str:
+def role_to_group(role: Role, education: str | None = None) -> str:
     """
     'врач'  -> B2
     'сестра' + высшее   -> B3
@@ -48,12 +22,15 @@ def role_to_group(role: str, education: str | None) -> str:
         return "B3" if e.startswith("выс") else "B4"
     raise ValueError("role должен быть 'врач' или 'сестра'")
 
-def category_to_num(category: str) -> int:
+
+def category_to_num(category: int | str | None) -> int:
     """
     'высшая' -> 1, 'первая' -> 2, 'вторая' -> 3, 'нет' -> 4.
     Поддерживает варианты: '1', '1-я', 'без категории', 'none' и т.п.
     """
-    c = (category or "").strip().lower()
+    if isinstance(category, int) and 1 <= category <= 4:
+        return category
+    c = (str(category or "")).strip().lower()
     mapping = {
         "высшая": 1, "высш.": 1, "высшая категория": 1, "highest": 1,
         "первая": 2, "1": 2, "1-я": 2, "1я": 2,
@@ -63,39 +40,38 @@ def category_to_num(category: str) -> int:
     }
     return mapping.get(c, 4)
 
-def _band_match(years: float, frm: float, to: float) -> bool:
-    """
-    Интервал считается [from, to); для '>25' в таблице to=999.
-    Отрицательный стаж приравниваем к 0.
-    """
-    y = max(0.0, float(years))
-    return (y >= float(frm)) and (y < float(to))
 
-def get_ets_coeff(
+def get_ets_coeff(group: str, category: int, years: float) -> float:
+    """
+    Коэффициент ЕТС по группе (B2/B3/B4), категории (1..4) и стажу (годы).
+    Интервал: band_from <= years < band_to (для '>25' band_to=999).
+    """
+    g = str(group).upper().strip()
+    cat = int(category)
+    y = max(0.0, float(years))
+
+    df = load_ets_table()  # DataFrame
+    d = df[(df["group"] == g) & (df["category"] == cat)]
+    if d.empty:
+        raise ValueError(f"Не найдена группа/категория: {g}/{cat}")
+
+    hit = d[(d["band_from"] <= y) & (y < d["band_to"])]
+    if hit.empty:
+        # подстраховка для граничных/аномальных значений
+        hit = d[d["band_from"] == d["band_from"].max()]
+    if hit.empty:
+        raise ValueError(f"Не найден коридор стажа для {g}/{cat}, years={y}")
+
+    return float(hit.iloc[0]["coeff"])
+
+
+def get_ets_coeff_by_role(
     role: Role,
     education: str | None,
-    category: str,
-    years: float,
+    category: str | int | None,   # ← добавили None
+    years: float
 ) -> float:
-    """
-    Вернёт коэффициент ЕТС из data/ets_coefficients.csv.
+    g = role_to_group(role, education)
+    c = category_to_num(category)
+    return get_ets_coeff(g, c, years)
 
-    Пример:
-        >>> get_ets_coeff("врач", None, "первая", 11)
-        5.21
-        >>> get_ets_coeff("сестра", "высшее", "первая", 3.5)
-        4.39
-        >>> get_ets_coeff("сестра", "среднее", "нет", 8.5)
-        3.53
-    """
-    group = role_to_group(role, education)
-    cat = category_to_num(category)
-
-    for row in load_ets_table():
-        if row["group"] == group and row["category"] == cat:
-            if _band_match(years, row["band_from"], row["band_to"]):
-                return float(row["coeff"])
-
-    raise ValueError(
-        f"Не найден коэффициент ЕТС для group={group}, category={cat}, years={years}"
-    )
