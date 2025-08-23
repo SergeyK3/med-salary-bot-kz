@@ -1,77 +1,65 @@
-# src/calc/base_oklad.py
-from __future__ import annotations
-from typing import Literal
-from ..utils.data_loader import load_ets_table
+"""
+Поиск коэффициента ЕТС по группе (B2/B3/B4), категории и стажу.
+Поддерживает два стиля вызова:
+- get_ets_coeff(role, education, category, years)
+- get_ets_coeff(group, category, years)
+"""
 
-Role = Literal["врач", "сестра"]
+from typing import Optional, Literal
+import pandas as pd
+from src.data_loaders import ets_df
 
-__all__ = ["get_ets_coeff", "get_ets_coeff_by_role", "role_to_group", "category_to_num"]
+CatName = Literal["высшая", "первая", "вторая", "нет", "без категории"]
 
-
-def role_to_group(role: Role, education: str | None = None) -> str:
-    """
-    'врач'  -> B2
-    'сестра' + высшее   -> B3
-    'сестра' + среднее  -> B4
-    """
+def _group_by_role(role: str, education: Optional[str]) -> str:
     r = (role or "").strip().lower()
     if r.startswith("врач"):
         return "B2"
-    if r.startswith("сест"):
-        e = (education or "").strip().lower()
-        return "B3" if e.startswith("выс") else "B4"
-    raise ValueError("role должен быть 'врач' или 'сестра'")
+    # сестринская
+    e = (education or "").strip().lower()
+    if e.startswith("высш"):
+        return "B3"
+    return "B4"
 
+def _cat_to_num(cat: str) -> int:
+    c = (str(cat) or "").strip().lower()
+    match c:
+        case "1" | "высшая": return 1
+        case "2" | "первая": return 2
+        case "3" | "вторая": return 3
+        case "4" | "нет" | "без категории": return 4
+    raise ValueError(f"Неизвестная категория: {cat}")
 
-def category_to_num(category: int | str | None) -> int:
+def get_ets_coeff(a, b, c, d=None) -> float:
     """
-    'высшая' -> 1, 'первая' -> 2, 'вторая' -> 3, 'нет' -> 4.
-    Поддерживает варианты: '1', '1-я', 'без категории', 'none' и т.п.
+    Вариант 1 (4 аргумента): (role, education, category, years)
+    Вариант 2 (3 аргумента): (group, category, years)
     """
-    if isinstance(category, int) and 1 <= category <= 4:
-        return category
-    c = (str(category or "")).strip().lower()
-    mapping = {
-        "высшая": 1, "высш.": 1, "высшая категория": 1, "highest": 1,
-        "первая": 2, "1": 2, "1-я": 2, "1я": 2,
-        "вторая": 3, "2": 3, "2-я": 3, "2я": 3,
-        "нет": 4, "без категории": 4, "0": 4, "none": 4, "н/к": 4,
-        "третья": 4,  # на всякий случай маппим в 'нет'
-    }
-    return mapping.get(c, 4)
+    if d is None:
+        # старый стиль (group, category, years)
+        group = str(a).strip().upper()   # ожидаем 'B2'/'B3'/'B4'
+        category = _cat_to_num(b)
+        years = float(c)
+    else:
+        # новый стиль (role, education, category, years)
+        role = a
+        education = b
+        category = _cat_to_num(c)
+        years = float(d)
+        group = _group_by_role(role, education)
 
-
-def get_ets_coeff(group: str, category: int, years: float) -> float:
-    """
-    Коэффициент ЕТС по группе (B2/B3/B4), категории (1..4) и стажу (годы).
-    Интервал: band_from <= years < band_to (для '>25' band_to=999).
-    """
-    g = str(group).upper().strip()
-    cat = int(category)
-    y = max(0.0, float(years))
-
-    df = load_ets_table()  # DataFrame
-    d = df[(df["group"] == g) & (df["category"] == cat)]
-    if d.empty:
-        raise ValueError(f"Не найдена группа/категория: {g}/{cat}")
-
-    hit = d[(d["band_from"] <= y) & (y < d["band_to"])]
+    df: pd.DataFrame = ets_df()
+    m = (
+        (df["group"] == group) &
+        (df["category"] == category) &
+        (df["band_from"] <= years) &
+        (years < df["band_to"])
+    )
+    hit = df.loc[m]
     if hit.empty:
-        # подстраховка для граничных/аномальных значений
-        hit = d[d["band_from"] == d["band_from"].max()]
-    if hit.empty:
-        raise ValueError(f"Не найден коридор стажа для {g}/{cat}, years={y}")
-
+        raise LookupError(f"Коэфф. ЕТС не найден: group={group}, cat={category}, years={years}")
     return float(hit.iloc[0]["coeff"])
 
-
-def get_ets_coeff_by_role(
-    role: Role,
-    education: str | None,
-    category: str | int | None,   # ← добавили None
-    years: float
-) -> float:
-    g = role_to_group(role, education)
-    c = category_to_num(category)
-    return get_ets_coeff(g, c, years)
-
+def get_ets_coeff_by_role(role, education, category, years) -> float:
+    # обёртка старого имени на новую функцию
+    return get_ets_coeff(role, education, category, years)
