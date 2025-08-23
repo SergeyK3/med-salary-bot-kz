@@ -7,6 +7,33 @@ Role = Literal["врач", "сестра"]
 
 __all__ = ["get_ets_coeff", "role_to_group", "category_to_num"]
 
+def get_ets_coeff(group: str, category: int, years: float) -> float:
+    """
+    Возвращает коэффициент ЕТС по группе (B2/B3/B4), категории (1..4) и стажу (годы).
+    Правило интервала: band_from <= years < band_to; для '>25' у нас band_to=999.
+    """
+    g = str(group).upper().strip()
+    try:
+        cat = int(category)
+    except Exception as e:
+        raise ValueError(f"Некорректная категория: {category}") from e
+
+    df = load_ets_table()
+    # фильтр по группе и категории
+    d = df[(df["group"] == g) & (df["category"] == cat)]
+    if d.empty:
+        raise ValueError(f"Не найдена группа/категория: {g}/{cat}")
+
+    # фильтр по стажу (включая нижнюю, исключая верхнюю границу)
+    m = d[(d["band_from"] <= years) & (years < d["band_to"])]
+    if m.empty:
+        # на всякий случай для граничных значений берём максимальный коридор
+        m = d[d["band_from"] == d["band_from"].max()]
+    if m.empty:
+        raise ValueError(f"Не найден коридор стажа для {g}/{cat}, years={years}")
+
+    return float(m.iloc[0]["coeff"])
+
 def role_to_group(role: str, education: str | None) -> str:
     """
     'врач'  -> B2

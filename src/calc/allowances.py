@@ -5,13 +5,13 @@ S = load_settings()
 BDO = float(S["BDO"])
 MRP = float(S["MRP"])
 
-# К1 — экозоны (часть от ДО или МРП, возвращаем сумму в тенге)
 def k1_amount(zone_code: str | None) -> float:
+    """Доплата за экологическую/радиационную зону в деньгах."""
     if not zone_code:
         return 0.0
     for z in load_zones():
         if z["code"] == zone_code:
-            return (z["value"] * (BDO if z["calc_base"].upper() == "DO" else MRP))
+            return (BDO * z["value"]) if z["calc_base"] == "DO" else (MRP * z["value"])
     return 0.0
 
 # К2 — сельская местность (от ДО)
