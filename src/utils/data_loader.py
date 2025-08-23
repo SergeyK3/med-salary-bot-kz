@@ -36,29 +36,34 @@ def load_settings(path: str | Path | None = None) -> dict:
         return yaml.safe_load(f)
 
 
-# ---------- zones.csv ----------
 def load_zones(path: str | Path | None = None) -> list[dict]:
-    """
-    Возвращает список словарей зон:
-    {code, name, calc_base ('DO'|'MRP'), value (float), notes}
-    """
     if path is None:
         path = ROOT / "data" / "zones.csv"
     df = _read_csv_robust(Path(path), ["code", "name", "calc_base", "value", "notes"])
-    # value -> float, даже если была запятая
-    df["value"] = pd.to_numeric(df["value"], errors="coerce").fillna(0.0)
+
+    # нормализуем строки
+    for col in ["code", "name", "calc_base", "notes", "value"]:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip()
+    df["calc_base"] = df["calc_base"].str.upper()
+
+    # value: приводим запятую к точке и конвертируем в float
+    df["value"] = pd.to_numeric(df["value"].str.replace(",", ".", regex=False), errors="coerce").fillna(0.0)
+
     return df.to_dict(orient="records")
 
 
-# ---------- risk_allowances.csv ----------
 def load_risk_allowances(path: str | Path | None = None) -> list[dict]:
-    """
-    Возвращает [{key, label, calc_base='DO', value(float)}]
-    """
     if path is None:
         path = ROOT / "data" / "risk_allowances.csv"
     df = _read_csv_robust(Path(path), ["key", "label", "calc_base", "value"])
-    df["value"] = pd.to_numeric(df["value"], errors="coerce").fillna(0.0)
+
+    for col in ["key", "label", "calc_base", "value"]:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip()
+    df["calc_base"] = df["calc_base"].str.upper()
+    df["value"] = pd.to_numeric(df["value"].str.replace(",", ".", regex=False), errors="coerce").fillna(0.0)
+
     return df.to_dict(orient="records")
 
 # Совместимость со старым кодом: таблица ЕТС

@@ -6,12 +6,16 @@ BDO = float(S["BDO"])
 MRP = float(S["MRP"])
 
 def k1_amount(zone_code: str | None) -> float:
-    """Доплата за экологическую/радиационную зону в деньгах."""
+    """Доплата за экологическую/радиационную зону в деньгах (ДО/МРП)."""
     if not zone_code:
         return 0.0
+    target = str(zone_code).strip().lower()
     for z in load_zones():
-        if z["code"] == zone_code:
-            return (BDO * z["value"]) if z["calc_base"] == "DO" else (MRP * z["value"])
+        code = str(z.get("code", "")).strip().lower()
+        base = str(z.get("calc_base", "")).strip().upper()
+        val = float(z.get("value", 0) or 0.0)
+        if code == target:
+            return (BDO * val) if base == "DO" else (MRP * val)
     return 0.0
 
 # К2 — сельская местность (от ДО)
