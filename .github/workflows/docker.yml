@@ -1,17 +1,18 @@
+# .github/workflows/docker.yml
 name: docker
 
 on:
   push:
-    tags: ["v*.*.*"]           # релизы по тегам vX.Y.Z
-    branches: ["dev"]          # опционально: собирать dev-образы
-  workflow_dispatch:           # ручной запуск из Actions
+    tags: ["v*.*.*"]          # релизные теги vX.Y.Z
+    branches: ["dev"]         # собирать dev-образы (опционально)
+  workflow_dispatch:          # ручной запуск из Actions
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write          # доступ к GHCR
+      packages: write         # пуш в GHCR
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,11 +33,11 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            # релизные теги
+            # релизный тег (vX.Y.Z)
             type=ref,event=tag
             # короткий sha
             type=sha,format=short,prefix=sha-
-            # latest только на теги
+            # latest только на релизные теги
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             # dev-теги при пуше в ветку dev
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
