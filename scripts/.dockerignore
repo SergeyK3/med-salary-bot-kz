@@ -1,0 +1,14 @@
+.git
+.gitignore
+.vscode
+.venv
+__pycache__/
+*.pyc
+.pytest_cache/
+build/
+dist/
+.cache/
+.coverage
+**/.DS_Store
+.github/         # можно убрать, если CI не нужен внутри образа
+
