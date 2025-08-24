@@ -10,5 +10,4 @@ dist/
 .cache/
 .coverage
 **/.DS_Store
-.github/         # можно убрать, если CI не нужен внутри образа
-
+.github/
