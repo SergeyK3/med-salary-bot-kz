@@ -1,8 +1,9 @@
+# .github/workflows/docker.yml
 name: docker
 
 on:
   push:
-    tags: ["v*.*.*"]          # релизы по тегам vX.Y.Z
+    tags: ["v*.*.*"]          # релизные теги vX.Y.Z
     branches: ["dev"]         # собирать dev-образы (опционально)
   workflow_dispatch:          # ручной запуск из Actions
 
