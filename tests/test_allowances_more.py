@@ -19,6 +19,6 @@ def test_k6_district_nurse():
     # участковая сестра 1.5 БДО
     assert k6_amount(True, "сестра") == float(S["BDO"]) * 1.5
 
-def test_special_amount_is_0_1_bdo():
-    S = load_settings()
-    assert special_amount() == float(S["BDO"]) * 0.1
+def test_special_amount_is_0_1_base_salary():
+    base_salary = 123456
+    assert special_amount(base_salary) == base_salary * 0.1
