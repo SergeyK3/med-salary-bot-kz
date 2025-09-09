@@ -30,7 +30,7 @@ def calc_total(answers: dict) -> dict:
 
     k1 = calc_k1(answers.get("eco_zone"), settings)
     k2 = calc_k2(answers.get("location", ""), settings)
-    k3 = calc_k3(bool(answers.get("is_head")), settings)
+    k3 = calc_k3(bool(answers.get("senior_nurse")), settings)
     k4 = calc_k4(answers.get("hazard_profile"), settings)
     k5 = calc_k5(
         answers.get("facility", ""),

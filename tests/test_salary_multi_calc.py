@@ -8,7 +8,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
     print("Входные данные:", {
         k: answers.get(k) for k in [
             "role", "education", "experience_years", "category",
-            "eco_zone", "location", "facility", "is_head",
+            "eco_zone", "location", "facility", "senior_nurse",
             "hazard_profile", "is_surgery", "is_district"
         ]
     })
@@ -28,15 +28,15 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
 @pytest.mark.parametrize(
     "scenario",
     [
-        {"name": "База/город", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": False, "is_district": False},
-        {"name": "Село", "location": "село", "eco_zone": None, "hazard_profile": None, "is_head": False, "is_district": False},
-        {"name": "Эко-зона (radiation_high)", "location": "город", "eco_zone": "radiation_high", "hazard_profile": None, "is_head": False, "is_district": False},
-        {"name": "Вредность: радиация", "location": "город", "eco_zone": None, "hazard_profile": "radiation", "is_head": False, "is_district": False},
-        {"name": "Вредность: химия", "location": "город", "eco_zone": None, "hazard_profile": "chemical", "is_head": False, "is_district": False},
-        {"name": "Вредность: инфекция", "location": "город", "eco_zone": None, "hazard_profile": "infection", "is_head": False, "is_district": False},
-        {"name": "Руководитель (зав. отделением)", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": True, "is_district": False},
-        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "radiation", "is_head": True, "is_district": False},
-        {"name": "Участковость", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": False, "is_district": True},
+        {"name": "База/город", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": False},
+        {"name": "Село", "location": "село", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": False},
+        {"name": "Эко-зона (radiation_high)", "location": "город", "eco_zone": "radiation_high", "hazard_profile": None, "senior_nurse": False, "is_district": False},
+        {"name": "Вредность: радиация", "location": "город", "eco_zone": None, "hazard_profile": "radiation", "senior_nurse": False, "is_district": False},
+        {"name": "Вредность: химия", "location": "город", "eco_zone": None, "hazard_profile": "chemical", "senior_nurse": False, "is_district": False},
+        {"name": "Вредность: инфекция", "location": "город", "eco_zone": None, "hazard_profile": "infection", "senior_nurse": False, "is_district": False},
+        {"name": "Руководитель (зав. отделением)", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": False},
+        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "radiation", "senior_nurse": True, "is_district": False},
+        {"name": "Участковость", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
     ],
 )
 def test_salary_scenarios_print_and_validate(scenario):
@@ -48,7 +48,7 @@ def test_salary_scenarios_print_and_validate(scenario):
         "eco_zone": None,
         "location": "город",
         "facility": "стационар",
-        "is_head": False,
+        "senior_nurse": False,
         "hazard_profile": None,
         "is_surgery": True,
         "is_district": False,
@@ -59,7 +59,7 @@ def test_salary_scenarios_print_and_validate(scenario):
         "location": scenario["location"],
         "eco_zone": scenario["eco_zone"],
         "hazard_profile": scenario["hazard_profile"],
-        "is_head": scenario["is_head"],
+        "senior_nurse": scenario["senior_nurse"],
         "is_district": scenario["is_district"],
     })
 
