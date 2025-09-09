@@ -1,4 +1,11 @@
 # scripts/smoke_test.py
+import sys
+from pathlib import Path
+# Add project root to Python path
+root = Path(__file__).resolve().parents[1]
+if str(root) not in sys.path:
+    sys.path.insert(0, str(root))
+
 from src.calc.base_oklad import get_ets_coeff
 from src.main import calc_salary
 import json
