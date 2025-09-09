@@ -34,7 +34,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
         {"name": "Вредность: радиация", "location": "город", "eco_zone": None, "hazard_profile": "radiation", "is_head": False, "is_district": False},
         {"name": "Вредность: химия", "location": "город", "eco_zone": None, "hazard_profile": "chemical", "is_head": False, "is_district": False},
         {"name": "Вредность: инфекция", "location": "город", "eco_zone": None, "hazard_profile": "infection", "is_head": False, "is_district": False},
-        {"name": "Руководитель (зав. отделением)", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": True, "is_district": False},
+        {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": True, "is_district": False},
         {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "radiation", "is_head": True, "is_district": False},
         {"name": "Участковость", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": False, "is_district": True},
     ],
