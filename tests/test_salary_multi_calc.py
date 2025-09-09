@@ -26,6 +26,11 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
     hazard_code = answers.get("hazard_profile")
     hazard_label = None
     hazard_value = None
+    
+    # Check if this is a senior nurse scenario and change title
+    if answers.get("senior_nurse"):
+        title = "Ст. медсестра"
+    
     # Меняем заголовок, если есть вредность
     if hazard_code and hazard_code in RISK_LABELS:
         hazard_label, hazard_value = RISK_LABELS[hazard_code]
@@ -65,7 +70,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
         {"name": "Вредность: рентген", "location": "город", "eco_zone": None, "hazard_profile": "xray", "is_head": False, "is_district": False},
         {"name": "Вредность: УЗИ", "location": "город", "eco_zone": None, "hazard_profile": "ultrasound", "is_head": False, "is_district": False},
         {"name": "Вредность: инфекционное", "location": "город", "eco_zone": None, "hazard_profile": "infectious", "is_head": False, "is_district": False},
-        {"name": "Руководитель (ст. медсестра)", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": True, "is_district": False},
+        {"name": "Руководитель (ст. медсестра)", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": False},
         {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "xray", "is_head": True, "is_district": False},
         {"name": "Участковость", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": False, "is_district": True},
     ],
@@ -90,9 +95,17 @@ def test_salary_scenarios_print_and_validate(scenario):
         "location": scenario["location"],
         "eco_zone": scenario["eco_zone"],
         "hazard_profile": scenario["hazard_profile"],
-        "is_head": scenario["is_head"],
         "is_district": scenario["is_district"],
     })
+    
+    # Handle senior nurse scenario
+    if scenario.get("senior_nurse"):
+        answers["role"] = "сестра"
+        answers["senior_nurse"] = True
+        answers["is_head"] = False
+    else:
+        answers["is_head"] = scenario.get("is_head", False)
+        answers["senior_nurse"] = False
 
     result = calc_total(answers)
 

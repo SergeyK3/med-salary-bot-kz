@@ -29,7 +29,7 @@ def calc_total(answers: dict) -> dict:
     # Расчет надбавок
     k1 = calc_k1(answers.get("eco_zone"), settings) or 0.0
     k2 = calc_k2(answers.get("location", ""), base_oklad, settings) or 0.0
-    k3 = calc_k3(bool(answers.get("is_head")), settings) or 0.0
+    k3 = calc_k3(bool(answers.get("is_head")), settings, bool(answers.get("senior_nurse"))) or 0.0
     k4 = calc_k4(answers.get("hazard_profile"), settings) or 0.0
     k5 = calc_k5(
         answers.get("facility", ""),
