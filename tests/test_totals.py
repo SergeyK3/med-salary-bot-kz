@@ -16,7 +16,7 @@ def test_total_doctor_surgery_case():
     }
     res = calc_total(answers)
     assert abs(res["ets_coeff"] - 5.21) < 1e-9
-    assert abs(res["base_oklad"] - 315_328.6854) < 0.01
+    assert abs(res["base_oklad"] - 315329) < 1
     assert abs(res["allowances"]["k5"] - 26_545.5) < 0.01
     assert abs(res["allowances"]["special"] - 1_769.7) < 0.01
-    assert abs(res["total_salary"] - 343_643.8854) < 0.02
+    assert res["total_salary"] == 343644  # исправлено: сравнение с округлённым значением

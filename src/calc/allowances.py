@@ -31,8 +31,18 @@ def k2_amount(location: str) -> float:
     return float(S.get("k2_rural", 0.25)) * BDO if str(location).strip().lower().startswith("село") else 0.0
 
 # --- K3 ---
-def k3_amount(senior_nurse: bool) -> float:
-    return float(S.get("k3_head", 0.05)) * BDO if senior_nurse else 0.0
+def k3_amount(is_head: bool) -> float:
+    return float(S.get("k3_head", 0.05)) * BDO if is_head else 0.0
+
+def calc_k3(is_head: bool, _settings: Optional[dict] = None) -> float:
+    return k3_amount(is_head)
+
+# --- Senior Nurse ---
+def senior_nurse_amount(is_senior_nurse: bool) -> float:
+    return 0.25 * BDO if is_senior_nurse else 0.0
+
+def calc_senior_nurse(is_senior_nurse: bool, _settings: Optional[dict] = None) -> float:
+    return senior_nurse_amount(is_senior_nurse)
 
 # --- K4 ---
 def k4_amount(profile_key: Optional[str]) -> float:
@@ -70,7 +80,6 @@ def special_amount() -> float:
 # Алиасы (совместимость)
 def calc_k1(eco_code: Optional[str], _settings: Optional[dict] = None) -> float: return k1_amount(eco_code)
 def calc_k2(location: str, _settings: Optional[dict] = None) -> float:        return k2_amount(location)
-def calc_k3(senior_nurse: bool, _settings: Optional[dict] = None) -> float:        return k3_amount(senior_nurse)
 def calc_k4(profile: Optional[str], _settings: Optional[dict] = None) -> float:return k4_amount(profile)
 def calc_k5(facility: str, role: str, is_surgery: bool, _settings: Optional[dict] = None) -> float:
     return k5_amount(facility, role, is_surgery)

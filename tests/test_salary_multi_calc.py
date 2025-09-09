@@ -34,8 +34,9 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
         {"name": "Вредность: радиация", "location": "город", "eco_zone": None, "hazard_profile": "radiation", "senior_nurse": False, "is_district": False},
         {"name": "Вредность: химия", "location": "город", "eco_zone": None, "hazard_profile": "chemical", "senior_nurse": False, "is_district": False},
         {"name": "Вредность: инфекция", "location": "город", "eco_zone": None, "hazard_profile": "infection", "senior_nurse": False, "is_district": False},
-        {"name": "Руководитель (зав. отделением)", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": False},
-        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "radiation", "senior_nurse": True, "is_district": False},
+        # Изменено: сценарий для старшей медсестры
+        {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
+        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "radiation", "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
         {"name": "Участковость", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
     ],
 )
@@ -62,6 +63,12 @@ def test_salary_scenarios_print_and_validate(scenario):
         "senior_nurse": scenario["senior_nurse"],
         "is_district": scenario["is_district"],
     })
+
+    # Добавлено: обработка role и education для сценариев старшей медсестры
+    if "role" in scenario:
+        answers["role"] = scenario["role"]
+    if "education" in scenario:
+        answers["education"] = scenario["education"]
 
     result = calc_total(answers)
 
