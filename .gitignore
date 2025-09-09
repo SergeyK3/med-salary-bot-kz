@@ -29,3 +29,9 @@ build/
 # IDE / Editor
 .vscode/
 .idea/
+
+# GitHub workflow/cache
+.github/
+
+# macOS system files
+.DS_Store

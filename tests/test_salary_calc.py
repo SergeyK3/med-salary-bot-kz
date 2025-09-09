@@ -26,5 +26,5 @@ def test_salary_is_integer():
     # Проверки
     assert isinstance(result["base_oklad"], int)
     assert isinstance(result["total_salary"], int)
-    assert result["base_oklad"] > 0
-    assert result["total_salary"] > 0
+    assert round(result["base_oklad"], 2) > round(0, 2)
+    assert round(result["total_salary"], 2) > round(0, 2)

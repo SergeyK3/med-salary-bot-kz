@@ -23,4 +23,4 @@ async def test_calc_endpoint_ok():
         assert r.status_code == 200
         data = r.json()
         assert abs(data["ets_coeff"] - 5.21) < 1e-9
-        assert data["total_salary"] > 0
+        assert round(data["total_salary"], 2) > round(0, 2)

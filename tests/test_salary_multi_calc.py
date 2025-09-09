@@ -78,8 +78,8 @@ def test_salary_scenarios_print_and_validate(scenario):
     # Инварианты
     assert isinstance(result["base_oklad"], int), f"base_oklad должен быть int, получено {type(result['base_oklad'])}"
     assert isinstance(result["total_salary"], int), f"total_salary должен быть int, получено {type(result['total_salary'])}"
-    assert result["base_oklad"] > 0, "base_oklad должен быть > 0"
-    assert result["total_salary"] > 0, "total_salary должен быть > 0"
+    assert round(result["base_oklad"], 2) > round(0, 2), "base_oklad должен быть > 0"
+    assert round(result["total_salary"], 2) > round(0, 2), "total_salary должен быть > 0"
 
 
 if __name__ == "__main__":
