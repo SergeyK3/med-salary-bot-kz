@@ -5,7 +5,6 @@ from src.calc.allowances import (
     calc_k1, calc_k2, calc_k3, calc_k4, calc_k5, calc_k6, special_conditions
 )
 
-
 def role_coeff(role: str, settings: dict) -> float:
     r = role.strip().lower()
     if r.startswith("врач"):
@@ -13,7 +12,6 @@ def role_coeff(role: str, settings: dict) -> float:
     if r.startswith("сест"):
         return float(settings["role_coefficients"]["сестра"])
     return float(settings["role_coefficients"]["младший"])
-
 
 def calc_total(answers: dict) -> dict:
     settings = load_settings()
@@ -24,26 +22,27 @@ def calc_total(answers: dict) -> dict:
         float(answers["experience_years"]),
     )
 
-    # должностной оклад округляем до целого
+    # Должностной оклад округляем до 2 знаков после запятой
     base_oklad_raw = float(settings["BDO"]) * ets * role_coeff(answers["role"], settings)
-    base_oklad = round(base_oklad_raw)
+    base_oklad = round(base_oklad_raw, 2)
 
-    k1 = calc_k1(answers.get("eco_zone"), settings)
-    k2 = calc_k2(answers.get("location", ""), settings)
-    k3 = calc_k3(bool(answers.get("is_head")), settings)
-    k4 = calc_k4(answers.get("hazard_profile"), settings)
+    # Расчет надбавок
+    k1 = calc_k1(answers.get("eco_zone"), settings) or 0.0
+    k2 = calc_k2(answers.get("location", ""), base_oklad, settings) or 0.0
+    k3 = calc_k3(bool(answers.get("is_head")), settings) or 0.0
+    k4 = calc_k4(answers.get("hazard_profile"), settings) or 0.0
     k5 = calc_k5(
         answers.get("facility", ""),
         answers["role"],
         bool(answers.get("is_surgery")),
         settings,
-    )
-    k6 = calc_k6(bool(answers.get("is_district")), answers["role"], settings)
-    k_spec = special_conditions(settings)
+    ) or 0.0
+    k6 = calc_k6(bool(answers.get("is_district")), answers["role"], settings) or 0.0
+    k_spec = special_conditions(base_oklad, settings) or 0.0
 
-    # итоговую сумму тоже округляем до целого
+    # Итоговую сумму тоже округляем до 2 знаков после запятой
     total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + k6 + k_spec
-    total = round(total_raw)
+    total = round(total_raw, 2)
 
     return {
         "ets_coeff": ets,
@@ -60,7 +59,6 @@ def calc_total(answers: dict) -> dict:
         "total_salary": total,
     }
 
-
 # Совместимость со старым API (если где-то используется)
 def total_amount(
     ets_coeff: float,
@@ -74,9 +72,9 @@ def total_amount(
     kspec: float,
 ) -> float:
     settings = load_settings()
-    # должностной оклад округляем до целого
+    # Должностной оклад округляем до 2 знаков после запятой
     base_oklad_raw = float(settings["BDO"]) * ets_coeff * role_coeff(role, settings)
-    base_oklad = round(base_oklad_raw)
-    # итоговая сумма тоже округляется до целого
+    base_oklad = round(base_oklad_raw, 2)
+    # Итоговая сумма тоже округляется до 2 знаков после запятой
     total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + k6 + kspec
-    return round(total_raw)
+    return round(total_raw, 2)
