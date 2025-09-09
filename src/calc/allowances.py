@@ -27,12 +27,17 @@ def k1_amount(zone_code: Optional[str]) -> float:
     return float(row["value"]) * float(base)
 
 # --- K2 ---
-def k2_amount(location: str) -> float:
-    return float(S.get("k2_rural", 0.25)) * BDO if str(location).strip().lower().startswith("село") else 0.0
+def k2_amount(location: str, base_oklad: float) -> float:
+    return round(0.25 * base_oklad, 2) if str(location).strip().lower().startswith("село") else 0.0
 
 # --- K3 ---
-def k3_amount(is_head: bool) -> float:
-    return float(S.get("k3_head", 0.05)) * BDO if is_head else 0.0
+def k3_amount(is_head: bool, is_senior_nurse: bool = False) -> float:
+    if is_senior_nurse:
+        return 0.25 * BDO  # Senior nurse gets 0.25 of BDO
+    elif is_head:
+        return float(S.get("k3_head", 0.05)) * BDO  # Regular head gets 0.05 of BDO
+    else:
+        return 0.0
 
 # --- K4 ---
 def k4_amount(profile_key: Optional[str]) -> float:
@@ -44,7 +49,9 @@ def k4_amount(profile_key: Optional[str]) -> float:
     if not m.any():
         return 0.0
     row = r.loc[m].iloc[0]
-    return float(row["value"]) * BDO
+    # БДО берётся из настроек, например, S["BDO"]
+    base = float(S["BDO"])  # В текущем году это 17697
+    return float(row["value"]) * base
 
 # --- K5 ---
 def k5_amount(facility: str, role: str, is_surgery: bool) -> float:
@@ -64,16 +71,27 @@ def k6_amount(is_district: bool, role: str) -> float:
     return mult * BDO
 
 # --- Special ---
-def special_amount() -> float:
-    return float(S.get("special_conditions", 0.1)) * BDO
+def special_amount(base_oklad: float) -> float:
+    return round(float(S.get("special_conditions", 0.1)) * base_oklad, 2)
 
 # Алиасы (совместимость)
-def calc_k1(eco_code: Optional[str], _settings: Optional[dict] = None) -> float: return k1_amount(eco_code)
-def calc_k2(location: str, _settings: Optional[dict] = None) -> float:        return k2_amount(location)
-def calc_k3(is_head: bool, _settings: Optional[dict] = None) -> float:        return k3_amount(is_head)
-def calc_k4(profile: Optional[str], _settings: Optional[dict] = None) -> float:return k4_amount(profile)
+def calc_k1(eco_code: Optional[str], _settings: Optional[dict] = None) -> float:
+    return k1_amount(eco_code)
+
+def calc_k2(location: str, base_oklad: float, _settings: Optional[dict] = None) -> float:
+    return k2_amount(location, base_oklad)
+
+def calc_k3(is_head: bool, _settings: Optional[dict] = None, is_senior_nurse: bool = False) -> float:
+    return k3_amount(is_head, is_senior_nurse)
+
+def calc_k4(profile: Optional[str], _settings: Optional[dict] = None) -> float:
+    return k4_amount(profile)
+
 def calc_k5(facility: str, role: str, is_surgery: bool, _settings: Optional[dict] = None) -> float:
     return k5_amount(facility, role, is_surgery)
+
 def calc_k6(is_district: bool, role: str, _settings: Optional[dict] = None) -> float:
     return k6_amount(is_district, role)
-def special_conditions(_settings: Optional[dict] = None) -> float:            return special_amount()
+
+def special_conditions(base_oklad: float, _settings: Optional[dict] = None) -> float:
+    return special_amount(base_oklad)
