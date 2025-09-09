@@ -22,3 +22,28 @@ def test_k6_district_nurse():
 def test_special_amount_is_0_1_bdo():
     S = load_settings()
     assert special_amount() == float(S["BDO"]) * 0.1
+
+def test_k5_inpatient_therapy_doctor():
+    """Test therapy doctor in inpatient setting"""
+    S = load_settings()
+    assert k5_amount("стационар", "врач", False) == float(S["BDO"]) * 0.8
+
+def test_k5_inpatient_surgery_nurse():
+    """Test surgery nurse in inpatient setting"""
+    S = load_settings()
+    assert k5_amount("стационар", "сестра", True) == float(S["BDO"]) * 0.8
+
+def test_k5_inpatient_therapy_nurse():
+    """Test therapy nurse in inpatient setting"""
+    S = load_settings()
+    assert k5_amount("стационар", "сестра", False) == float(S["BDO"]) * 0.4
+
+def test_k6_district_doctor():
+    """Test district doctor allowance"""
+    S = load_settings()
+    assert k6_amount(True, "врач") == float(S["BDO"]) * 2.0
+
+def test_k6_non_district():
+    """Test non-district worker has no allowance"""
+    assert k6_amount(False, "врач") == 0
+    assert k6_amount(False, "сестра") == 0
