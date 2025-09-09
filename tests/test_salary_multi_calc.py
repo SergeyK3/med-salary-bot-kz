@@ -8,7 +8,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
     print("Входные данные:", {
         k: answers.get(k) for k in [
             "role", "education", "experience_years", "category",
-            "eco_zone", "location", "facility", "is_head",
+            "eco_zone", "location", "facility", "is_head", "senior_nurse",
             "hazard_profile", "is_surgery", "is_district"
         ]
     })
@@ -34,7 +34,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
         {"name": "Вредность: радиация", "location": "город", "eco_zone": None, "hazard_profile": "radiation", "is_head": False, "is_district": False},
         {"name": "Вредность: химия", "location": "город", "eco_zone": None, "hazard_profile": "chemical", "is_head": False, "is_district": False},
         {"name": "Вредность: инфекция", "location": "город", "eco_zone": None, "hazard_profile": "infection", "is_head": False, "is_district": False},
-        {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": True, "is_district": False},
+        {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": False, "is_district": False, "senior_nurse": True, "role": "медсестра", "education": "среднее"},
         {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "radiation", "is_head": True, "is_district": False},
         {"name": "Участковость", "location": "город", "eco_zone": None, "hazard_profile": None, "is_head": False, "is_district": True},
     ],
@@ -62,6 +62,14 @@ def test_salary_scenarios_print_and_validate(scenario):
         "is_head": scenario["is_head"],
         "is_district": scenario["is_district"],
     })
+    
+    # Handle additional scenario-specific parameters
+    if "senior_nurse" in scenario:
+        answers["senior_nurse"] = scenario["senior_nurse"]
+    if "role" in scenario:
+        answers["role"] = scenario["role"]
+    if "education" in scenario:
+        answers["education"] = scenario["education"]
 
     result = calc_total(answers)
 

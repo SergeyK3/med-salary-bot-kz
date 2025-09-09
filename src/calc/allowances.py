@@ -34,6 +34,10 @@ def k2_amount(location: str) -> float:
 def k3_amount(is_head: bool) -> float:
     return float(S.get("k3_head", 0.05)) * BDO if is_head else 0.0
 
+# --- Senior Nurse ---
+def senior_nurse_amount(is_senior_nurse: bool) -> float:
+    return 0.25 * BDO if is_senior_nurse else 0.0
+
 # --- K4 ---
 def k4_amount(profile_key: Optional[str]) -> float:
     if not profile_key:
@@ -76,4 +80,6 @@ def calc_k5(facility: str, role: str, is_surgery: bool, _settings: Optional[dict
     return k5_amount(facility, role, is_surgery)
 def calc_k6(is_district: bool, role: str, _settings: Optional[dict] = None) -> float:
     return k6_amount(is_district, role)
+def calc_senior_nurse(is_senior_nurse: bool, _settings: Optional[dict] = None) -> float:
+    return senior_nurse_amount(is_senior_nurse)
 def special_conditions(_settings: Optional[dict] = None) -> float:            return special_amount()
