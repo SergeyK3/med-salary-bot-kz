@@ -12,18 +12,17 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
             "hazard_profile", "is_surgery", "is_district"
         ]
     })
-    print("Базовый оклад:", result["base_oklad"])
+    print("Базовый оклад:", f"{result['base_oklad']:.2f}")
     alw = result.get("allowances", {})
     print("Надбавки:")
-    print(f"  k1 (эко-зона): {alw.get('k1')}")
-    print(f"  k2 (село/местность): {alw.get('k2')}")
-    print(f"  k3 (рук. должность): {alw.get('k3')}")
-    print(f"  k4 (вредность): {alw.get('k4')}")
-    print(f"  k5 (профиль/операции): {alw.get('k5')}")
-    print(f"  k6 (участковость): {alw.get('k6')}")
-    print(f"  special (психоэмоц. напр.): {alw.get('special')}")
-    print("Итоговая сумма (total):", result["total_salary"])
-
+    print(f"  k1 (эко-зона): {alw.get('k1', 0):.2f}")
+    print(f"  k2 (село/местность): {alw.get('k2', 0):.2f}")
+    print(f"  k3 (рук. должность): {alw.get('k3', 0):.2f}")
+    print(f"  k4 (вредность): {alw.get('k4', 0):.2f}")
+    print(f"  k5 (профиль/операции): {alw.get('k5', 0):.2f}")
+    print(f"  k6 (участковость): {alw.get('k6', 0):.2f}")
+    print(f"  special (психоэмоц. напр.): {alw.get('special', 0):.2f}")
+    print("Итоговая сумма (total):", f"{result['total_salary']:.2f}")
 
 @pytest.mark.parametrize(
     "scenario",
