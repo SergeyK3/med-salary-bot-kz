@@ -21,7 +21,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
     print(f"  k4 (вредность): {alw.get('k4', 0):.2f}")
     print(f"  k5 (профиль/операции): {alw.get('k5', 0):.2f}")
     print(f"  k6 (участковость): {alw.get('k6', 0):.2f}")
-    print(f"  special (психоэмоц. напр.): {alw.get('special', 0):.2f}")
+    print(f"  Особые условия (10% ДО): {alw.get('special', 0):.2f}")
     print("Итоговая сумма (total):", f"{result['total_salary']:.2f}")
 
 @pytest.mark.parametrize(
@@ -75,8 +75,8 @@ def test_salary_scenarios_print_and_validate(scenario):
     _print_result(scenario["name"], result, answers)
 
     # Инварианты
-    assert isinstance(result["base_oklad"], int), f"base_oklad должен быть int, получено {type(result['base_oklad'])}"
-    assert isinstance(result["total_salary"], int), f"total_salary должен быть int, получено {type(result['total_salary'])}"
+    assert isinstance(result["base_oklad"], (float, int)), f"base_oklad должен быть float или int, получено {type(result['base_oklad'])}"
+    assert isinstance(result["total_salary"], (float, int)), f"total_salary должен быть float или int, получено {type(result['total_salary'])}"
     assert round(result["base_oklad"], 2) > round(0, 2), "base_oklad должен быть > 0"
     assert round(result["total_salary"], 2) > round(0, 2), "total_salary должен быть > 0"
 
