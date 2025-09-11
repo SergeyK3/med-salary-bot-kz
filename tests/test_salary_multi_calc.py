@@ -19,9 +19,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
     print(f"  k2 (город/село): {alw.get('k2', 0):.2f}")
     print(f"  k3 (рук. должность): {alw.get('k3', 0):.2f}")
     print(f"  k4 (вредность): {alw.get('k4', 0):.2f} ({alw.get('k4_label', '')}, {alw.get('k4_value', 0)})")
-    print(f"  k5 (профиль/операции): {alw.get('k5', 0):.2f}")
-    print(f"  k6 (участковость): {alw.get('k6', 0):.2f}")
-    print(f"  Особые условия (10% ДО): {alw.get('special', 0):.2f}")
+    print(f"  k5 (психоэмоц напряжение): {alw.get('k5', 0):.2f}")
     print("Итоговая сумма (total):", f"{result['total_salary']:.2f}")
 
 @pytest.mark.parametrize(

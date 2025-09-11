@@ -38,16 +38,17 @@ def calc_total(answers: dict) -> dict:
 
     k4, k4_label, k4_value = calc_k4(answers.get("hazard_profile"), base_oklad)
     k5 = calc_k5(
-        answers.get("facility", ""),
         answers["role"],
+        answers.get("facility", ""),
         bool(answers.get("is_surgery")),
-        settings,
+        bool(answers.get("is_uchastok")),
+        float(settings["BDO"])
     )
-    k6 = calc_k6(bool(answers.get("is_district")), answers["role"], settings)
+
     k_spec = special_conditions(base_oklad)
 
     # итоговую сумму тоже округляем до двух знаков после запятой
-    total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + k6 + k_spec
+    total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + k_spec
     total = round(total_raw, 2)
 
     return {
@@ -60,8 +61,7 @@ def calc_total(answers: dict) -> dict:
             "k4": k4,
             "k4_label": k4_label,
             "k4_value": k4_value,
-            "k5": k5,
-            "k6": k6,
+            "k5": k5,            
             "special": k_spec,
         },
         "total_salary": total,

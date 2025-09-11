@@ -61,13 +61,35 @@ def k4_amount(hazard_profile: str, base_oklad: float) -> tuple[float, str, float
     return value * base_oklad, label, value
 
 # --- K5 ---
-def k5_amount(facility: str, role: str, is_surgery: bool) -> float:
-    if not str(facility).strip().lower().startswith("стац"):
-        return 0.0
-    branch = "хирургия" if is_surgery else "терапия"
-    role_k = _role_key(role)
-    mult = float(S["k5_inpatient"][role_k][branch])
-    return mult * BDO
+def k5_amount(
+    role: str,
+    facility: str,
+    is_surgery: bool,
+    is_uchastok: bool,
+    BDO: float
+) -> float:
+    if role == "врач":
+        if facility == "стационар":
+            if is_surgery:
+                return 1.5 * BDO
+            else:
+                return 0.8 * BDO
+        else:
+            if is_uchastok:
+                return 2.0 * BDO
+            else:
+                return 0.0
+    else:  # медсестра
+        if facility == "стационар":
+            if is_surgery:
+                return 0.8 * BDO
+            else:
+                return 0.4 * BDO
+        else:
+            if is_uchastok:
+                return 1.5 * BDO
+            else:
+                return 0.0
 
 # --- K6 ---
 def k6_amount(is_district: bool, role: str) -> float:
@@ -84,10 +106,10 @@ def special_amount(base_oklad: float) -> float:
 # Алиасы (совместимость)
 def calc_k1(eco_code: Optional[str], _settings: Optional[dict] = None) -> float: return k1_amount(eco_code)
 def calc_k2(location: str, base_oklad: float, _settings: Optional[dict] = None) -> float:        return k2_amount(location, base_oklad)
-def calc_k4(profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
-    return k4_amount(profile, base_oklad)
-def calc_k5(facility: str, role: str, is_surgery: bool, _settings: Optional[dict] = None) -> float:
-    return k5_amount(facility, role, is_surgery)
+def calc_k4(hazard_profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
+    return k4_amount(hazard_profile, base_oklad)
+def calc_k5(role: str, facility: str, is_surgery: bool, is_uchastok: bool, BDO: float) -> float:
+    return k5_amount(role, facility, is_surgery, is_uchastok, BDO)
 def calc_k6(is_district: bool, role: str, _settings: Optional[dict] = None) -> float:
     return k6_amount(is_district, role)
 def special_conditions(base_oklad: float, _settings: Optional[dict] = None) -> float:
