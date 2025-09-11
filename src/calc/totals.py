@@ -28,18 +28,15 @@ def calc_total(answers: dict) -> dict:
     base_oklad_raw = float(settings["BDO"]) * ets * role_coeff(answers["role"], settings)
     base_oklad = round(base_oklad_raw, 2)
 
-    k1 = calc_k1(answers.get("eco_zone"), settings)
-    # ...existing code...
+    k1 = calc_k1(answers.get("eco_zone"), settings)    
     k2 = calc_k2(answers["location"], base_oklad)
-    # ...existing code...
-
-    # --- исправленная логика расчёта надбавки k3 ---
+    
     if answers.get("senior_nurse"):
         k3 = calc_senior_nurse(True, settings)
     else:
         k3 = calc_k3(bool(answers.get("is_head")), settings)
 
-    k4 = calc_k4(answers.get("hazard_profile"), settings)
+    k4, k4_label, k4_value = calc_k4(answers.get("hazard_profile"), base_oklad)
     k5 = calc_k5(
         answers.get("facility", ""),
         answers["role"],
@@ -61,6 +58,8 @@ def calc_total(answers: dict) -> dict:
             "k2": k2,
             "k3": k3,
             "k4": k4,
+            "k4_label": k4_label,
+            "k4_value": k4_value,
             "k5": k5,
             "k6": k6,
             "special": k_spec,

@@ -48,16 +48,17 @@ def calc_senior_nurse(is_senior_nurse: bool, _settings: Optional[dict] = None) -
     return senior_nurse_amount(is_senior_nurse)
 
 # --- K4 ---
-def k4_amount(profile_key: Optional[str]) -> float:
-    if not profile_key:
-        return 0.0
-    r: pd.DataFrame = risk_df()
-    key = str(profile_key).strip().lower()
-    m = (r["key"].str.lower() == key) | (r["label"].str.lower() == key)
-    if not m.any():
-        return 0.0
-    row = r.loc[m].iloc[0]
-    return float(row["value"]) * BDO
+def k4_amount(hazard_profile: str, base_oklad: float) -> tuple[float, str, float]:
+    if hazard_profile is None:
+        return 0.0, "", 0.0
+    df = risk_df()
+    filtered = df[df['key'] == hazard_profile]
+    if filtered.empty:
+        return 0.0, "", 0.0
+    row = filtered.iloc[0]
+    value = float(row['value'])
+    label = row['label']
+    return value * base_oklad, label, value
 
 # --- K5 ---
 def k5_amount(facility: str, role: str, is_surgery: bool) -> float:
@@ -83,7 +84,8 @@ def special_amount(base_oklad: float) -> float:
 # Алиасы (совместимость)
 def calc_k1(eco_code: Optional[str], _settings: Optional[dict] = None) -> float: return k1_amount(eco_code)
 def calc_k2(location: str, base_oklad: float, _settings: Optional[dict] = None) -> float:        return k2_amount(location, base_oklad)
-def calc_k4(profile: Optional[str], _settings: Optional[dict] = None) -> float:return k4_amount(profile)
+def calc_k4(profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
+    return k4_amount(profile, base_oklad)
 def calc_k5(facility: str, role: str, is_surgery: bool, _settings: Optional[dict] = None) -> float:
     return k5_amount(facility, role, is_surgery)
 def calc_k6(is_district: bool, role: str, _settings: Optional[dict] = None) -> float:

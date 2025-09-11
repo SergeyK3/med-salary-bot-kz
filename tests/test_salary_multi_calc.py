@@ -16,9 +16,9 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
     alw = result.get("allowances", {})
     print("Надбавки:")
     print(f"  k1 (эко-зона): {alw.get('k1', 0):.2f}")
-    print(f"  k2 (село/местность): {alw.get('k2', 0):.2f}")
+    print(f"  k2 (город/село): {alw.get('k2', 0):.2f}")
     print(f"  k3 (рук. должность): {alw.get('k3', 0):.2f}")
-    print(f"  k4 (вредность): {alw.get('k4', 0):.2f}")
+    print(f"  k4 (вредность): {alw.get('k4', 0):.2f} ({alw.get('k4_label', '')}, {alw.get('k4_value', 0)})")
     print(f"  k5 (профиль/операции): {alw.get('k5', 0):.2f}")
     print(f"  k6 (участковость): {alw.get('k6', 0):.2f}")
     print(f"  Особые условия (10% ДО): {alw.get('special', 0):.2f}")
@@ -30,15 +30,15 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
         {"name": "База/город", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": False},
         {"name": "Село", "location": "село", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": False},
         {"name": "Эко-зона (radiation_high)", "location": "город", "eco_zone": "radiation_high", "hazard_profile": None, "senior_nurse": False, "is_district": False},
-        {"name": "Вредность: радиация", "location": "город", "eco_zone": None, "hazard_profile": "radiation", "senior_nurse": False, "is_district": False},
-        {"name": "Вредность: химия", "location": "город", "eco_zone": None, "hazard_profile": "chemical", "senior_nurse": False, "is_district": False},
-        {"name": "Вредность: инфекция", "location": "город", "eco_zone": None, "hazard_profile": "infection", "senior_nurse": False, "is_district": False},
-        # Изменено: сценарий для старшей медсестры
+        {"name": "Вредность: рентген", "location": "город", "eco_zone": None, "hazard_profile": "xray", "senior_nurse": False, "is_district": False},
+        {"name": "Вредность: УЗИ", "location": "город", "eco_zone": None, "hazard_profile": "ultrasound", "senior_nurse": False, "is_district": False},
+        {"name": "Вредность: инфекционное отделение", "location": "город", "eco_zone": None, "hazard_profile": "infectious", "senior_nurse": False, "is_district": False},        
         {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
-        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "radiation", "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
+        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
         {"name": "Участковость", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
     ],
 )
+
 def test_salary_scenarios_print_and_validate(scenario):
     base_answers = {
         "role": "врач",
