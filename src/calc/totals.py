@@ -24,12 +24,14 @@ def calc_total(answers: dict) -> dict:
         float(answers["experience_years"]),
     )
 
-    # должностной оклад округляем до целого
+    # должностной оклад округляем до двух знаков после запятой
     base_oklad_raw = float(settings["BDO"]) * ets * role_coeff(answers["role"], settings)
-    base_oklad = round(base_oklad_raw)
+    base_oklad = round(base_oklad_raw, 2)
 
     k1 = calc_k1(answers.get("eco_zone"), settings)
-    k2 = calc_k2(answers.get("location", ""), settings)
+    # ...existing code...
+    k2 = calc_k2(answers["location"], base_oklad)
+    # ...existing code...
 
     # --- исправленная логика расчёта надбавки k3 ---
     if answers.get("senior_nurse"):
@@ -45,11 +47,11 @@ def calc_total(answers: dict) -> dict:
         settings,
     )
     k6 = calc_k6(bool(answers.get("is_district")), answers["role"], settings)
-    k_spec = special_conditions(settings)
+    k_spec = special_conditions(base_oklad)
 
-    # итоговую сумму тоже округляем до целого
+    # итоговую сумму тоже округляем до двух знаков после запятой
     total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + k6 + k_spec
-    total = round(total_raw)
+    total = round(total_raw, 2)
 
     return {
         "ets_coeff": ets,
@@ -80,9 +82,9 @@ def total_amount(
     kspec: float,
 ) -> float:
     settings = load_settings()
-    # должностной оклад округляем до целого
+    # должностной оклад округляем до двух знаков после запятой
     base_oklad_raw = float(settings["BDO"]) * ets_coeff * role_coeff(role, settings)
-    base_oklad = round(base_oklad_raw)
-    # итоговая сумма тоже округляется до целого
+    base_oklad = round(base_oklad_raw, 2)
+    # итоговая сумма тоже округляется до двух знаков после запятой
     total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + k6 + kspec
-    return round(total_raw)
+    return round(total_raw, 2)

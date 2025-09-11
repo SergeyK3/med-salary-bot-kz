@@ -27,8 +27,11 @@ def k1_amount(zone_code: Optional[str]) -> float:
     return float(row["value"]) * float(base)
 
 # --- K2 ---
-def k2_amount(location: str) -> float:
-    return float(S.get("k2_rural", 0.25)) * BDO if str(location).strip().lower().startswith("село") else 0.0
+def k2_amount(location: str, base_oklad: float) -> float:
+    # Надбавка 25% от должностного оклада для города или села
+    if location in ("город", "село"):
+        return 0.25 * base_oklad
+    return 0.0
 
 # --- K3 ---
 def k3_amount(is_head: bool) -> float:
@@ -74,15 +77,16 @@ def k6_amount(is_district: bool, role: str) -> float:
     return mult * BDO
 
 # --- Special ---
-def special_amount() -> float:
-    return float(S.get("special_conditions", 0.1)) * BDO
+def special_amount(base_oklad: float) -> float:
+    return float(S.get("special_conditions", 0.1)) * base_oklad
 
 # Алиасы (совместимость)
 def calc_k1(eco_code: Optional[str], _settings: Optional[dict] = None) -> float: return k1_amount(eco_code)
-def calc_k2(location: str, _settings: Optional[dict] = None) -> float:        return k2_amount(location)
+def calc_k2(location: str, base_oklad: float, _settings: Optional[dict] = None) -> float:        return k2_amount(location, base_oklad)
 def calc_k4(profile: Optional[str], _settings: Optional[dict] = None) -> float:return k4_amount(profile)
 def calc_k5(facility: str, role: str, is_surgery: bool, _settings: Optional[dict] = None) -> float:
     return k5_amount(facility, role, is_surgery)
 def calc_k6(is_district: bool, role: str, _settings: Optional[dict] = None) -> float:
     return k6_amount(is_district, role)
-def special_conditions(_settings: Optional[dict] = None) -> float:            return special_amount()
+def special_conditions(base_oklad: float, _settings: Optional[dict] = None) -> float:
+    return special_amount(base_oklad)
