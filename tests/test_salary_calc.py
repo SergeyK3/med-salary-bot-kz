@@ -13,7 +13,7 @@ def test_salary_is_integer():
         "senior_nurse": False,
         "hazard_profile": None,
         "is_surgery": True,
-        "is_district": False,
+        "is_uchastok": False,
     }
 
     result = calc_total(answers)

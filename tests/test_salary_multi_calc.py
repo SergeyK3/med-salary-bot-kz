@@ -25,25 +25,35 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
 @pytest.mark.parametrize(
     "scenario",
     [
-        {"name": "База/город/врач/стационар", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": False},
-        {"name": "Село", "location": "село", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": False},
-        {"name": "Эко-зона (radiation_high)", "location": "город", "eco_zone": "radiation_high", "hazard_profile": None, "senior_nurse": False, "is_district": False},
-        {"name": "Вредность: рентген", "location": "город", "eco_zone": None, "hazard_profile": "xray", "senior_nurse": False, "is_district": False},
-        {"name": "Вредность: УЗИ", "location": "город", "eco_zone": None, "hazard_profile": "ultrasound", "senior_nurse": False, "is_district": False},
-        {"name": "Вредность: инфекционное отделение", "location": "город", "eco_zone": None, "hazard_profile": "infectious", "senior_nurse": False, "is_district": False},        
-        {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
-        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
+        {"name": "База/город/врач/стационар", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_uchastok": False},
+        {"name": "Село", "location": "село", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_uchastok": False},
+        {"name": "Эко-зона (radiation_high)", "location": "город", "eco_zone": "radiation_high", "hazard_profile": None, "senior_nurse": False, "is_uchastok": False},
+        {"name": "Вредность: рентген", "location": "город", "eco_zone": None, "hazard_profile": "xray", "senior_nurse": False, "is_uchastok": False},
+        {"name": "Вредность: УЗИ", "location": "город", "eco_zone": None, "hazard_profile": "ultrasound", "senior_nurse": False, "is_uchastok": False},
+        {"name": "Вредность: инфекционное отделение", "location": "город", "eco_zone": None, "hazard_profile": "infectious", "senior_nurse": False, "is_uchastok": False},        
+        {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_uchastok": False, "role": "медсестра", "education": "среднее"},
+        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_uchastok": False, "role": "медсестра", "education": "среднее"},
                 
-        {"name": "База/город/врач/участковый", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
-        {"name": "Село", "location": "село", "facility": "поликлиника", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
-        {"name": "Эко-зона (radiation_high)", "location": "город", "facility": "поликлиника", "eco_zone": "radiation_high", "hazard_profile": None, "senior_nurse": False, "is_district": True},
-        {"name": "Вредность: рентген", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": "xray", "senior_nurse": False, "is_district": True},
-        {"name": "Вредность: УЗИ", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": "ultrasound", "senior_nurse": False, "is_district": True},
-        {"name": "Вредность: инфекционное отделение", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": "infectious", "senior_nurse": False, "is_district": True},        
-        {"name": "Ст. медсестра", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": True, "role": "медсестра", "education": "среднее"},
-        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "facility": "поликлиника", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_district": True, "role": "медсестра", "education": "среднее"},
+        {"name": "База/город/врач/участковый", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_uchastok": True},
+        {"name": "Село", "location": "село", "facility": "поликлиника", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_uchastok": True},
+        {"name": "Эко-зона (radiation_high)", "location": "город", "facility": "поликлиника", "eco_zone": "radiation_high", "hazard_profile": None, "senior_nurse": False, "is_uchastok": True},
+        {"name": "Вредность: рентген", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": "xray", "senior_nurse": False, "is_uchastok": True},
+        {"name": "Вредность: УЗИ", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": "ultrasound", "senior_nurse": False, "is_uchastok": True},
+        {"name": "Вредность: инфекционное отделение", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": "infectious", "senior_nurse": False, "is_uchastok": True},        
+        {"name": "Ст. медсестра", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_uchastok": True, "role": "медсестра", "education": "среднее"},
+        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "facility": "поликлиника", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_uchastok": True, "role": "медсестра", "education": "среднее"},
         
+        # Медсестра со средним образованием
+{"name": "Медсестра/стационар/среднее/хирургия", "role": "медсестра", "education": "среднее", "facility": "стационар", "is_surgery": True, "is_uchastok": False, "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False},
+{"name": "Медсестра/стационар/среднее/терапия", "role": "медсестра", "education": "среднее", "facility": "стационар", "is_surgery": False, "is_uchastok": False, "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False},
+{"name": "Медсестра/поликлиника/среднее/участковая", "role": "медсестра", "education": "среднее", "facility": "поликлиника", "is_surgery": False, "is_uchastok": True, "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False},
+{"name": "Медсестра/поликлиника/среднее/не участковая", "role": "медсестра", "education": "среднее", "facility": "поликлиника", "is_surgery": False, "is_uchastok": False, "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False},
 
+# Медсестра с высшим образованием
+{"name": "Медсестра/стационар/высшее/хирургия", "role": "медсестра", "education": "высшее", "facility": "стационар", "is_surgery": True, "is_uchastok": False, "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False},
+{"name": "Медсестра/стационар/высшее/терапия", "role": "медсестра", "education": "высшее", "facility": "стационар", "is_surgery": False, "is_uchastok": False, "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False},
+{"name": "Медсестра/поликлиника/высшее/участковая", "role": "медсестра", "education": "высшее", "facility": "поликлиника", "is_surgery": False, "is_uchastok": True, "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False},
+{"name": "Медсестра/поликлиника/высшее/не участковая", "role": "медсестра", "education": "высшее", "facility": "поликлиника", "is_surgery": False, "is_uchastok": False, "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False},
     
     ],
 )

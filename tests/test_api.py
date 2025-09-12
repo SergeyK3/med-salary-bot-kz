@@ -17,7 +17,7 @@ async def test_calc_endpoint_ok():
             "senior_nurse": False,
             "hazard_profile": None,
             "is_surgery": True,
-            "is_district": False,
+            "is_uchastok": False,
         }
         r = await client.post("/calc", json=payload)
         assert r.status_code == 200

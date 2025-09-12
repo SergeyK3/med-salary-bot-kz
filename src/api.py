@@ -24,7 +24,7 @@ class Answers(BaseModel):
     senior_nurse: bool = False
     hazard_profile: Optional[str] = None
     is_surgery: bool = False
-    is_district: bool = False
+    is_uchastok: bool = False
 
 
 @app.get("/")

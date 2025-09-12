@@ -8,6 +8,7 @@
 from typing import Optional, Literal
 import pandas as pd
 from src.data_loaders import ets_df
+from src.config import load_settings
 
 CatName = Literal["высшая", "первая", "вторая", "нет", "без категории"]
 
@@ -40,6 +41,7 @@ def get_ets_coeff(a, b, c, d=None) -> float:
         group = str(a).strip().upper()   # ожидаем 'B2'/'B3'/'B4'
         category = _cat_to_num(b)
         years = float(c)
+        role = None
     else:
         # новый стиль (role, education, category, years)
         role = a
@@ -58,7 +60,23 @@ def get_ets_coeff(a, b, c, d=None) -> float:
     hit = df.loc[m]
     if hit.empty:
         raise LookupError(f"Коэфф. ЕТС не найден: group={group}, cat={category}, years={years}")
-    return float(hit.iloc[0]["coeff"])
+    ets_coeff = float(hit.iloc[0]["coeff"])
+
+    # --- ДОБАВЛЕНА ЛОГИКА ДОПОЛНИТЕЛЬНОГО КОЭФФИЦИЕНТА ---
+    settings = load_settings()
+    role_coeffs = settings.get("role_coefficients", {})
+    # Для врача и медсестры берём коэффициент из settings.yml
+    if role is not None:
+        r = str(role).strip().lower()
+        if r.startswith("врач"):
+            extra_coeff = float(role_coeffs.get("врач", 1.0))
+        elif r.startswith("медсестра"):
+            extra_coeff = float(role_coeffs.get("медсестра", role_coeffs.get("сестра", 1.0)))
+        else:
+            extra_coeff = float(role_coeffs.get(r, 1.0))
+        return ets_coeff * extra_coeff
+    else:
+        return ets_coeff
 
 def get_ets_coeff_by_role(role, education, category, years) -> float:
     # обёртка старого имени на новую функцию

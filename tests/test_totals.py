@@ -12,7 +12,7 @@ def test_total_doctor_surgery_case():
         "senior_nurse": False,
         "hazard_profile": None,
         "is_surgery": True,
-        "is_district": False,
+        "is_uchastok": False,
     }
     res = calc_total(answers)
     assert abs(res["ets_coeff"] - 5.21) < 1e-9

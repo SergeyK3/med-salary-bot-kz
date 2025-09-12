@@ -11,7 +11,7 @@ answers = {
     "senior_nurse": False,
     "hazard_profile": None,
     "is_surgery": True,
-    "is_district": False,
+    "is_uchastok": False,
 }
 
 res = calc_salary(answers)
