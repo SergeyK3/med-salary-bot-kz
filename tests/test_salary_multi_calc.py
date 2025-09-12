@@ -25,7 +25,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
 @pytest.mark.parametrize(
     "scenario",
     [
-        {"name": "База/город", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": False},
+        {"name": "База/город/врач/стационар", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": False},
         {"name": "Село", "location": "село", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": False},
         {"name": "Эко-зона (radiation_high)", "location": "город", "eco_zone": "radiation_high", "hazard_profile": None, "senior_nurse": False, "is_district": False},
         {"name": "Вредность: рентген", "location": "город", "eco_zone": None, "hazard_profile": "xray", "senior_nurse": False, "is_district": False},
@@ -33,7 +33,18 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
         {"name": "Вредность: инфекционное отделение", "location": "город", "eco_zone": None, "hazard_profile": "infectious", "senior_nurse": False, "is_district": False},        
         {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
         {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
-        {"name": "Участковость", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
+                
+        {"name": "База/город/врач/участковый", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
+        {"name": "Село", "location": "село", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
+        {"name": "Эко-зона (radiation_high)", "location": "город", "eco_zone": "radiation_high", "hazard_profile": None, "senior_nurse": False, "is_district": True},
+        {"name": "Вредность: рентген", "location": "город", "eco_zone": None, "hazard_profile": "xray", "senior_nurse": False, "is_district": True},
+        {"name": "Вредность: УЗИ", "location": "город", "eco_zone": None, "hazard_profile": "ultrasound", "senior_nurse": False, "is_district": True},
+        {"name": "Вредность: инфекционное отделение", "location": "город", "eco_zone": None, "hazard_profile": "infectious", "senior_nurse": False, "is_district": True},        
+        {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": True, "role": "медсестра", "education": "среднее"},
+        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_district": True, "role": "медсестра", "education": "среднее"},
+        
+
+    
     ],
 )
 
