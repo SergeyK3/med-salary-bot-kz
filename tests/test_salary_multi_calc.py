@@ -9,7 +9,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
         k: answers.get(k) for k in [
             "role", "education", "experience_years", "category",
             "eco_zone", "location", "facility", "senior_nurse",
-            "hazard_profile", "is_surgery", "is_district"
+            "hazard_profile", "is_surgery", "is_uchastok"
         ]
     })
     print("Базовый оклад:", f"{result['base_oklad']:.2f}")
@@ -34,14 +34,14 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
         {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
         {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_district": False, "role": "медсестра", "education": "среднее"},
                 
-        {"name": "База/город/врач/участковый", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
-        {"name": "Село", "location": "село", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
-        {"name": "Эко-зона (radiation_high)", "location": "город", "eco_zone": "radiation_high", "hazard_profile": None, "senior_nurse": False, "is_district": True},
-        {"name": "Вредность: рентген", "location": "город", "eco_zone": None, "hazard_profile": "xray", "senior_nurse": False, "is_district": True},
-        {"name": "Вредность: УЗИ", "location": "город", "eco_zone": None, "hazard_profile": "ultrasound", "senior_nurse": False, "is_district": True},
-        {"name": "Вредность: инфекционное отделение", "location": "город", "eco_zone": None, "hazard_profile": "infectious", "senior_nurse": False, "is_district": True},        
-        {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": True, "role": "медсестра", "education": "среднее"},
-        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_district": True, "role": "медсестра", "education": "среднее"},
+        {"name": "База/город/врач/участковый", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
+        {"name": "Село", "location": "село", "facility": "поликлиника", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_district": True},
+        {"name": "Эко-зона (radiation_high)", "location": "город", "facility": "поликлиника", "eco_zone": "radiation_high", "hazard_profile": None, "senior_nurse": False, "is_district": True},
+        {"name": "Вредность: рентген", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": "xray", "senior_nurse": False, "is_district": True},
+        {"name": "Вредность: УЗИ", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": "ultrasound", "senior_nurse": False, "is_district": True},
+        {"name": "Вредность: инфекционное отделение", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": "infectious", "senior_nurse": False, "is_district": True},        
+        {"name": "Ст. медсестра", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_district": True, "role": "медсестра", "education": "среднее"},
+        {"name": "Комбо: село+эко+вредность+рук", "location": "село", "facility": "поликлиника", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_district": True, "role": "медсестра", "education": "среднее"},
         
 
     
@@ -60,7 +60,7 @@ def test_salary_scenarios_print_and_validate(scenario):
         "senior_nurse": False,
         "hazard_profile": None,
         "is_surgery": True,
-        "is_district": False,
+        "is_uchastok": False,
     }
 
     answers = deepcopy(base_answers)
@@ -69,7 +69,8 @@ def test_salary_scenarios_print_and_validate(scenario):
         "eco_zone": scenario["eco_zone"],
         "hazard_profile": scenario["hazard_profile"],
         "senior_nurse": scenario["senior_nurse"],
-        "is_district": scenario["is_district"],
+        "is_uchastok": scenario.get("is_uchastok", False),
+        "facility": scenario.get("facility", answers["facility"]),
     })
 
     # Добавлено: обработка role и education для сценариев старшей медсестры
