@@ -28,8 +28,8 @@ def k1_amount(zone_code: Optional[str]) -> float:
 
 # --- K2 ---
 def k2_amount(location: str, base_oklad: float) -> float:
-    # Надбавка 25% от должностного оклада для города или села
-    if location in ("город", "село"):
+    # Надбавка 25% от должностного оклада только для села
+    if location.strip().lower() == "село":
         return 0.25 * base_oklad
     return 0.0
 
