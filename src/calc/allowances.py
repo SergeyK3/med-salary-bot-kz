@@ -15,65 +15,102 @@ def _role_key(role: str) -> str:
     return "врач" if r.startswith("врач") else "сестра"
 
 # --- K1 ---
-def k1_amount(zone_code: Optional[str]) -> float:
-    if not zone_code:
-        return 0.0
+def k1_amount(zone_code: Optional[str], base_oklad: float) -> float:
     z: pd.DataFrame = zones_df()
-    m = z["code"].str.lower() == str(zone_code).strip().lower()
+    # Проверяем, что zone_code указан и есть в таблице
+    m = z["code"].str.lower() == str(zone_code or "").strip().lower()
     if not m.any():
         return 0.0
     row = z.loc[m].iloc[0]
-    base = BDO if str(row["calc_base"]).upper() == "DO" else MRP
+    base = base_oklad if str(row["calc_base"]).upper() == "DO" else MRP
     return float(row["value"]) * float(base)
 
 # --- K2 ---
-def k2_amount(location: str) -> float:
-    return float(S.get("k2_rural", 0.25)) * BDO if str(location).strip().lower().startswith("село") else 0.0
+def k2_amount(location: str, base_oklad: float) -> float:
+    # Надбавка 25% от должностного оклада только для села
+    if location.strip().lower() == "село":
+        return 0.25 * base_oklad
+    return 0.0
 
 # --- K3 ---
-def k3_amount(is_head: bool) -> float:
-    return float(S.get("k3_head", 0.05)) * BDO if is_head else 0.0
+def k3_amount(senior_nurse: bool, base_oklad: float) -> float:
+    # Надбавка 5% только для старшей медсестры
+    if senior_nurse:
+        return 0.05 * base_oklad
+    return 0.0
 
-# --- K4 ---
-def k4_amount(profile_key: Optional[str]) -> float:
-    if not profile_key:
-        return 0.0
-    r: pd.DataFrame = risk_df()
-    key = str(profile_key).strip().lower()
-    m = (r["key"].str.lower() == key) | (r["label"].str.lower() == key)
-    if not m.any():
-        return 0.0
-    row = r.loc[m].iloc[0]
-    return float(row["value"]) * BDO
+def calc_k3(is_head: bool, _settings: Optional[dict] = None) -> float:
+    return k3_amount(is_head)
+
+# --- Senior Nurse ---
+def senior_nurse_amount(is_senior_nurse: bool) -> float:
+    return 0.25 * BDO if is_senior_nurse else 0.0
+
+def calc_senior_nurse(is_senior_nurse: bool, _settings: Optional[dict] = None) -> float:
+    return senior_nurse_amount(is_senior_nurse)
+
+def k4_amount(hazard_profile: Optional[str], base_oklad: float) -> tuple[float, str, float]:
+    if hazard_profile is None:
+        return 0.0, "", 0.0
+    df = risk_df()
+    filtered = df[df['key'] == hazard_profile]
+    if filtered.empty:
+        return 0.0, "", 0.0
+    row = filtered.iloc[0]
+    value = float(row['value'])
+    label = row.get('label', '') if 'label' in row else ''
+    return value * base_oklad, label, value
+
+def calc_k4(hazard_profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
+    return k4_amount(hazard_profile, base_oklad)
 
 # --- K5 ---
-def k5_amount(facility: str, role: str, is_surgery: bool) -> float:
-    if not str(facility).strip().lower().startswith("стац"):
-        return 0.0
-    branch = "хирургия" if is_surgery else "терапия"
-    role_k = _role_key(role)
-    mult = float(S["k5_inpatient"][role_k][branch])
-    return mult * BDO
+def k5_amount(location, role, is_surgery, is_district, base_oklad):
+    if role == "врач":
+        if location == "стационар":
+            if is_surgery:
+                return base_oklad * 1.5
+            else:
+                return base_oklad * 0.8
+        elif is_district:
+            return base_oklad * 2.0
+        else:
+            return 0.0
+    elif role == "сестра":
+        if location == "стационар":
+            if is_surgery:
+                return base_oklad * 0.8
+            else:
+                return base_oklad * 0.4
+        elif is_district:
+            return base_oklad * 1.5
+        else:
+            return 0.0
+    return 0.0
 
 # --- K6 ---
-def k6_amount(is_district: bool, role: str) -> float:
-    if not is_district:
+def k6_amount(is_uchastok: bool, role: str) -> float:
+    if not is_uchastok:
         return 0.0
     role_k = _role_key(role)
     mult = float(S["k6_district"][role_k])
     return mult * BDO
 
 # --- Special ---
-def special_amount() -> float:
-    return float(S.get("special_conditions", 0.1)) * BDO
+def special_amount(base_oklad: float) -> float:
+    return float(S.get("special_conditions", 0.1)) * base_oklad
 
 # Алиасы (совместимость)
-def calc_k1(eco_code: Optional[str], _settings: Optional[dict] = None) -> float: return k1_amount(eco_code)
-def calc_k2(location: str, _settings: Optional[dict] = None) -> float:        return k2_amount(location)
-def calc_k3(is_head: bool, _settings: Optional[dict] = None) -> float:        return k3_amount(is_head)
-def calc_k4(profile: Optional[str], _settings: Optional[dict] = None) -> float:return k4_amount(profile)
-def calc_k5(facility: str, role: str, is_surgery: bool, _settings: Optional[dict] = None) -> float:
-    return k5_amount(facility, role, is_surgery)
-def calc_k6(is_district: bool, role: str, _settings: Optional[dict] = None) -> float:
-    return k6_amount(is_district, role)
-def special_conditions(_settings: Optional[dict] = None) -> float:            return special_amount()
+def calc_k1(eco_code: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> float:
+    return k1_amount(eco_code, base_oklad)
+def calc_k2(location: str, base_oklad: float, _settings: Optional[dict] = None) -> float:        return k2_amount(location, base_oklad)
+def calc_k4(hazard_profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
+    return k4_amount(hazard_profile, base_oklad)
+def calc_k5(role, facility, is_surgery, is_uchastok, bdo):
+    if role == "врач" and facility == "стационар" and is_surgery and not is_uchastok:
+        return round(1.5 * bdo, 2)
+    return 0.0
+def calc_k6(is_uchastok: bool, role: str, _settings: Optional[dict] = None) -> float:
+    return k6_amount(is_uchastok, role)
+def special_conditions(base_oklad: float, _settings: Optional[dict] = None) -> float:
+    return special_amount(base_oklad)

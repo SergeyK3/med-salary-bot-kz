@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "med-salary-bot-kz"
+version = "0.1.0"
+description = "Bot for salary calculations"
+authors = [{ name="SergeyK3" }]
+requires-python = ">=3.12"
+
+[tool.setuptools.packages.find]
+where = ["src"]

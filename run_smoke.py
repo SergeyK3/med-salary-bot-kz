@@ -8,10 +8,10 @@ answers = {
     "eco_zone": None,
     "location": "город",
     "facility": "стационар",
-    "is_head": False,
+    "senior_nurse": False,
     "hazard_profile": None,
     "is_surgery": True,
-    "is_district": False,
+    "is_uchastok": False,
 }
 
 res = calc_salary(answers)
