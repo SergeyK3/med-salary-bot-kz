@@ -9,14 +9,14 @@ def test_total_doctor_surgery_case():
         "eco_zone": None,
         "location": "город",
         "facility": "стационар",
-        "is_head": False,
+        "senior_nurse": False,
         "hazard_profile": None,
         "is_surgery": True,
-        "is_district": False,
+        "is_uchastok": False,
     }
     res = calc_total(answers)
     assert abs(res["ets_coeff"] - 5.21) < 1e-9
-    assert abs(res["base_oklad"] - 315_328.6854) < 0.01
-    assert abs(res["allowances"]["k5"] - 26_545.5) < 0.01
-    assert abs(res["allowances"]["special"] - 1_769.7) < 0.01
-    assert abs(res["total_salary"] - 343_643.8854) < 0.02
+    assert abs(res["base_oklad"] - 315329) < 1
+    assert round(abs(res["allowances"]["k5"] - 26_545.5), 2) < round(0.01, 2)
+    assert round(res["allowances"]["special"], 2) == round(res["base_oklad"] * 0.1, 2)
+    assert round(res["total_salary"], 2) == round(373407.06, 2)

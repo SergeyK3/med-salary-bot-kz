@@ -21,10 +21,10 @@ class Answers(BaseModel):
     eco_zone: Optional[str] = None
     location: Optional[str] = "город"
     facility: Optional[str] = None
-    is_head: bool = False
+    senior_nurse: bool = False
     hazard_profile: Optional[str] = None
     is_surgery: bool = False
-    is_district: bool = False
+    is_uchastok: bool = False
 
 
 @app.get("/")
