@@ -2,7 +2,7 @@
 from src.config import load_settings
 from src.calc.base_oklad import get_ets_coeff
 from src.calc.allowances import (
-    calc_k1, calc_k2, calc_k3, calc_k4, calc_k5, calc_k6, calc_senior_nurse, special_conditions
+    calc_k1, calc_k2, calc_k3, calc_k4, calc_k5, calc_senior_nurse, special_conditions
 )
 
 
@@ -25,7 +25,7 @@ def calc_total(answers: dict) -> dict:
     )
 
     # должностной оклад округляем до двух знаков после запятой
-    base_oklad_raw = float(settings["BDO"]) * ets * role_coeff(answers["role"], settings)
+    base_oklad_raw = float(settings["BDO"]) * ets 
     base_oklad = round(base_oklad_raw, 2)
 
     k1 = calc_k1(answers.get("eco_zone"), settings)    
@@ -76,8 +76,7 @@ def total_amount(
     k2: float,
     k3: float,
     k4: float,
-    k5: float,
-    k6: float,
+    k5: float,    
     kspec: float,
 ) -> float:
     settings = load_settings()
@@ -85,5 +84,5 @@ def total_amount(
     base_oklad_raw = float(settings["BDO"]) * ets_coeff * role_coeff(role, settings)
     base_oklad = round(base_oklad_raw, 2)
     # итоговая сумма тоже округляется до двух знаков после запятой
-    total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + k6 + kspec
+    total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + kspec
     return round(total_raw, 2)
