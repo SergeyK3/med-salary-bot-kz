@@ -50,16 +50,20 @@ def senior_nurse_amount(is_senior_nurse: bool) -> float:
 def calc_senior_nurse(is_senior_nurse: bool, _settings: Optional[dict] = None) -> float:
     return senior_nurse_amount(is_senior_nurse)
 
-def k4_amount(hazard_profile: str, base_oklad: float) -> float:
+def k4_amount(hazard_profile: Optional[str], base_oklad: float) -> tuple[float, str, float]:
     if hazard_profile is None:
-        return 0.0
+        return 0.0, "", 0.0
     df = risk_df()
     filtered = df[df['key'] == hazard_profile]
     if filtered.empty:
-        return 0.0
+        return 0.0, "", 0.0
     row = filtered.iloc[0]
     value = float(row['value'])
-    return value * base_oklad
+    label = row.get('label', '')
+    return value * base_oklad, label, value
+
+def calc_k4(hazard_profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
+    return k4_amount(hazard_profile, base_oklad)
 
 # --- K5 ---
 def k5_amount(location, role, is_surgery, is_district, base_oklad):
