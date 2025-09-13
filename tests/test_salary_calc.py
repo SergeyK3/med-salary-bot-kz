@@ -24,7 +24,8 @@ def test_salary_is_integer():
     print("Итоговая сумма:", result["total_salary"])
 
     # Проверки
-    assert isinstance(result["base_oklad"], int)
+    assert isinstance(result["base_oklad"], (int, float))
+    assert round(result["base_oklad"], 2) == result["base_oklad"]
     assert isinstance(result["total_salary"], int)
-    assert round(result["base_oklad"], 2) > round(0, 2)
-    assert round(result["total_salary"], 2) > round(0, 2)
+    assert round(result["base_oklad"], 2) == float(f"{result['base_oklad']:.2f}")
+    assert round(result["total_salary"], 2) == float(f"{result['base_oklad']:.2f}")

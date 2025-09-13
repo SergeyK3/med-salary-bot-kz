@@ -15,7 +15,7 @@ def _role_key(role: str) -> str:
     return "врач" if r.startswith("врач") else "сестра"
 
 # --- K1 ---
-def k1_amount(zone_code: Optional[str]) -> float:
+def k1_amount(zone_code: Optional[str], base_oklad: float) -> float:
     if not zone_code:
         return 0.0
     z: pd.DataFrame = zones_df()
@@ -23,7 +23,7 @@ def k1_amount(zone_code: Optional[str]) -> float:
     if not m.any():
         return 0.0
     row = z.loc[m].iloc[0]
-    base = BDO if str(row["calc_base"]).upper() == "DO" else MRP
+    base = base_oklad if str(row["calc_base"]).upper() == "DO" else MRP
     return float(row["value"]) * float(base)
 
 # --- K2 ---
@@ -107,7 +107,8 @@ def special_amount(base_oklad: float) -> float:
     return float(S.get("special_conditions", 0.1)) * base_oklad
 
 # Алиасы (совместимость)
-def calc_k1(eco_code: Optional[str], _settings: Optional[dict] = None) -> float: return k1_amount(eco_code)
+def calc_k1(eco_code: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> float:
+    return k1_amount(eco_code, base_oklad)
 def calc_k2(location: str, base_oklad: float, _settings: Optional[dict] = None) -> float:        return k2_amount(location, base_oklad)
 def calc_k4(hazard_profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
     return k4_amount(hazard_profile, base_oklad)
