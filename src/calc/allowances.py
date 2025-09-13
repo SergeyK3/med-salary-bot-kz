@@ -16,10 +16,9 @@ def _role_key(role: str) -> str:
 
 # --- K1 ---
 def k1_amount(zone_code: Optional[str], base_oklad: float) -> float:
-    if not zone_code:
-        return 0.0
     z: pd.DataFrame = zones_df()
-    m = z["code"].str.lower() == str(zone_code).strip().lower()
+    # Проверяем, что zone_code указан и есть в таблице
+    m = z["code"].str.lower() == str(zone_code or "").strip().lower()
     if not m.any():
         return 0.0
     row = z.loc[m].iloc[0]
