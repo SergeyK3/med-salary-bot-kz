@@ -106,8 +106,10 @@ def calc_k1(eco_code: Optional[str], base_oklad: float, _settings: Optional[dict
 def calc_k2(location: str, base_oklad: float, _settings: Optional[dict] = None) -> float:        return k2_amount(location, base_oklad)
 def calc_k4(hazard_profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
     return k4_amount(hazard_profile, base_oklad)
-def calc_k5(role: str, facility: str, is_surgery: bool, is_uchastok: bool, BDO: float) -> float:
-    return k5_amount(role, facility, is_surgery, is_uchastok, BDO)
+def calc_k5(role, facility, is_surgery, is_uchastok, bdo):
+    if role == "врач" and facility == "стационар" and is_surgery and not is_uchastok:
+        return round(1.5 * bdo, 2)
+    return 0.0
 def calc_k6(is_uchastok: bool, role: str, _settings: Optional[dict] = None) -> float:
     return k6_amount(is_uchastok, role)
 def special_conditions(base_oklad: float, _settings: Optional[dict] = None) -> float:

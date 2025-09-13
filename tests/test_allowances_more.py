@@ -7,7 +7,9 @@ def test_k1_eco_catastrophe_uses_bdo():
 
 def test_k4_xray_from_bdo():
     S = load_settings()
-    assert k4_amount("xray", float(S["BDO"])) == float(S["BDO"]) * 1.0  # рентген = 1.0 ДО
+    # Ожидаем кортеж: (сумма, метка, коэффициент)
+    expected = (float(S["BDO"]) * 1.0, 'Рентген', 1.0)
+    assert k4_amount("xray", float(S["BDO"])) == expected
 
 def test_k5_inpatient_surgery_doctor():
     S = load_settings()

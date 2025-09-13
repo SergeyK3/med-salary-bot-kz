@@ -23,10 +23,13 @@ def calc_total(answers: dict) -> dict:
         answers["category"],
         float(answers["experience_years"]),
     )
+    role_mult = role_coeff(answers["role"], settings)
+    print("ETS coeff:", ets, "Role multiplier:", role_mult)  # Для отладки
 
-    # должностной оклад округляем до двух знаков после запятой
-    base_oklad_raw = float(settings["BDO"]) * ets 
+    # должностной оклад с учетом дополнительного коэффициента
+    base_oklad_raw = float(settings["BDO"]) * ets * role_mult
     base_oklad = round(base_oklad_raw, 2)
+
 
     k1 = calc_k1(answers.get("eco_zone"), settings)    
     k2 = calc_k2(answers["location"], base_oklad)
