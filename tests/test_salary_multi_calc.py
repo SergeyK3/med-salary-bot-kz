@@ -17,7 +17,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
     print("Надбавки:")
     print(f"  k1 (эко-зона): {alw.get('k1', 0):.2f}")
     print(f"  k2 (город/село): {alw.get('k2', 0):.2f}")
-    print(f"  k3 (рук. должность): {alw.get('k3', 0):.2f}")
+    print(f"  k3 (ст. медсестра): {alw.get('k3', 0):.2f}")
     print(f"  k4 (вредность): {alw.get('k4', 0):.2f} ({alw.get('k4_label', '')}, {alw.get('k4_value', 0)})")
     print(f"  k5 (психоэмоц напряжение): {alw.get('k5', 0):.2f}")
     print("Итоговая сумма (total):", f"{result['total_salary']:.2f}")
@@ -31,7 +31,7 @@ def _print_result(title: str, result: dict, answers: dict) -> None:
         {"name": "Вредность: рентген", "location": "город", "eco_zone": None, "hazard_profile": "xray", "senior_nurse": False, "is_uchastok": False},
         {"name": "Вредность: УЗИ", "location": "город", "eco_zone": None, "hazard_profile": "ultrasound", "senior_nurse": False, "is_uchastok": False},
         {"name": "Вредность: инфекционное отделение", "location": "город", "eco_zone": None, "hazard_profile": "infectious", "senior_nurse": False, "is_uchastok": False},        
-        {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_uchastok": False, "role": "медсестра", "education": "среднее"},
+        {"name": "Ст. медсестра", "location": "город", "eco_zone": None, "hazard_profile": None, "senior_nurse": True, "is_uchastok": False, "role": "медсестра", "education": "среднее"}, 
         {"name": "Комбо: село+эко+вредность+рук", "location": "село", "eco_zone": "radiation_high", "hazard_profile": "xray", "senior_nurse": True, "is_uchastok": False, "role": "медсестра", "education": "среднее"},
                 
         {"name": "База/город/врач/участковый", "location": "город", "facility": "поликлиника", "eco_zone": None, "hazard_profile": None, "senior_nurse": False, "is_uchastok": True},

@@ -34,8 +34,11 @@ def k2_amount(location: str, base_oklad: float) -> float:
     return 0.0
 
 # --- K3 ---
-def k3_amount(is_head: bool) -> float:
-    return float(S.get("k3_head", 0.05)) * BDO if is_head else 0.0
+def k3_amount(senior_nurse: bool, base_oklad: float) -> float:
+    # Надбавка 5% только для старшей медсестры
+    if senior_nurse:
+        return 0.05 * base_oklad
+    return 0.0
 
 def calc_k3(is_head: bool, _settings: Optional[dict] = None) -> float:
     return k3_amount(is_head)
