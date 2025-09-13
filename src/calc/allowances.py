@@ -50,49 +50,40 @@ def senior_nurse_amount(is_senior_nurse: bool) -> float:
 def calc_senior_nurse(is_senior_nurse: bool, _settings: Optional[dict] = None) -> float:
     return senior_nurse_amount(is_senior_nurse)
 
-# --- K4 ---
-def k4_amount(hazard_profile: str, base_oklad: float) -> tuple[float, str, float]:
+def k4_amount(hazard_profile: str, base_oklad: float) -> float:
     if hazard_profile is None:
-        return 0.0, "", 0.0
+        return 0.0
     df = risk_df()
     filtered = df[df['key'] == hazard_profile]
     if filtered.empty:
-        return 0.0, "", 0.0
+        return 0.0
     row = filtered.iloc[0]
     value = float(row['value'])
-    label = row['label']
-    return value * base_oklad, label, value
+    return value * base_oklad
 
 # --- K5 ---
-def k5_amount(
-    role: str,
-    facility: str,
-    is_surgery: bool,
-    is_uchastok: bool,
-    BDO: float
-) -> float:
+def k5_amount(location, role, is_surgery, is_district, base_oklad):
     if role == "врач":
-        if facility == "стационар":
+        if location == "стационар":
             if is_surgery:
-                return 1.5 * BDO
+                return base_oklad * 1.5
             else:
-                return 0.8 * BDO
+                return base_oklad * 0.8
+        elif is_district:
+            return base_oklad * 2.0
         else:
-            if is_uchastok:
-                return 2.0 * BDO
-            else:
-                return 0.0
-    else:  # медсестра
-        if facility == "стационар":
+            return 0.0
+    elif role == "сестра":
+        if location == "стационар":
             if is_surgery:
-                return 0.8 * BDO
+                return base_oklad * 0.8
             else:
-                return 0.4 * BDO
+                return base_oklad * 0.4
+        elif is_district:
+            return base_oklad * 1.5
         else:
-            if is_uchastok:
-                return 1.5 * BDO
-            else:
-                return 0.0
+            return 0.0
+    return 0.0
 
 # --- K6 ---
 def k6_amount(is_uchastok: bool, role: str) -> float:
