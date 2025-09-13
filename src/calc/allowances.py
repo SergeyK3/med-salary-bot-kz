@@ -58,7 +58,7 @@ def k4_amount(hazard_profile: Optional[str], base_oklad: float) -> tuple[float, 
         return 0.0, "", 0.0
     row = filtered.iloc[0]
     value = float(row['value'])
-    label = row.get('label', '')
+    label = row.get('label', '') if 'label' in row else ''
     return value * base_oklad, label, value
 
 def calc_k4(hazard_profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:

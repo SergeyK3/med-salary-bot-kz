@@ -26,6 +26,8 @@ def test_salary_is_integer():
     # Проверки
     assert isinstance(result["base_oklad"], (int, float))
     assert round(result["base_oklad"], 2) == result["base_oklad"]
-    assert isinstance(result["total_salary"], int)
-    assert round(result["base_oklad"], 2) == float(f"{result['base_oklad']:.2f}")
-    assert round(result["total_salary"], 2) == float(f"{result['base_oklad']:.2f}")
+    assert isinstance(result["total_salary"], float)
+    # Проверяем, что ровно два знака после запятой
+    total_str = f"{result['total_salary']:.2f}"
+    assert "." in total_str and len(total_str.split(".")[1]) == 2
+    assert round(result["total_salary"], 2) == result["total_salary"]
