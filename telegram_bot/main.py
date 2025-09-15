@@ -11,9 +11,17 @@ from telegram.ext import (
 from src.calc.totals import calc_total
 
 # Состояния диалога
-SPECIALTY, EDUCATION, EXPERIENCE, CATEGORY, ZONE, LOCALITY, ORG_TYPE, UCHASTOK = range(8)
+async def restart_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if isinstance(context.user_data, dict):
+        context.user_data.clear()
+    return await start(update, context)
 
+SPECIALTY, EDUCATION, EXPERIENCE, CATEGORY, ZONE, LOCALITY, ORG_TYPE, UCHASTOK = range(8)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return ConversationHandler.END
+    if context.user_data is None:
+        context.user_data = {}
     context.user_data.clear()
     keyboard = [["Врач", "Медсестра"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -24,6 +32,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return SPECIALTY
 
 async def specialty(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return ConversationHandler.END
+    if context.user_data is None:
+        context.user_data = {}
     context.user_data["specialty"] = update.message.text
     if update.message.text == "Медсестра":
         keyboard = [["Высшее", "Среднее"]]
@@ -31,6 +43,8 @@ async def specialty(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Укажите образование:", reply_markup=reply_markup)
         return EDUCATION
     else:
+        # Для врача образование сразу "высшее"
+        context.user_data["education"] = "высшее"
         # Для врача сразу спрашиваем про хирургическую должность
         keyboard = [["Да", "Нет"]]
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -41,6 +55,10 @@ async def specialty(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return UCHASTOK
 
 async def education(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return ConversationHandler.END
+    if context.user_data is None:
+        context.user_data = {}
     if context.user_data.get("specialty") == "Медсестра":
         context.user_data["education"] = update.message.text
     else:
@@ -49,6 +67,10 @@ async def education(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return EXPERIENCE
 
 async def experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return ConversationHandler.END
+    if context.user_data is None:
+        context.user_data = {}
     context.user_data["experience"] = update.message.text
     keyboard = [["Высшая", "Первая"], ["Вторая", "Нет категории"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -56,6 +78,10 @@ async def experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return CATEGORY
 
 async def category(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return ConversationHandler.END
+    if context.user_data is None:
+        context.user_data = {}
     context.user_data["category"] = update.message.text
     keyboard = [["Да", "Нет"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -63,6 +89,10 @@ async def category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ZONE
 
 async def zone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return ConversationHandler.END
+    if context.user_data is None:
+        context.user_data = {}
     if update.message.text == "Да":
         # Предложить выбор конкретной зоны
         zone_keyboard = [
@@ -83,66 +113,29 @@ async def zone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return LOCALITY
 
 async def locality(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return ConversationHandler.END
+    if context.user_data is None:
+        context.user_data = {}
     context.user_data["locality"] = update.message.text
     keyboard = [["Стационар", "Поликлиника"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
-    await update.message.reply_text("Укажите тип медорганизации:", reply_markup=reply_markup)
+    await update.message.reply_text("Выберите тип медорганизации:", reply_markup=reply_markup)
     return ORG_TYPE
 
 # Вопрос о хирургической должности
 async def org_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["org_type"] = update.message.text
-
-    # Вопрос о наличии вредности
-    if "hazard_profile" not in context.user_data:
-        keyboard = [["Да", "Нет"]]
+    if not update.message:
+        return ConversationHandler.END
+    if context.user_data is None:
+        context.user_data = {}
+    org_type_value = update.message.text
+    # Разрешаем только выбор из двух кнопок
+    if org_type_value not in ["Стационар", "Поликлиника"]:
+        keyboard = [["Стационар", "Поликлиника"]]
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
-        await update.message.reply_text(
-            "Есть ли у вас вредные условия труда?",
-            reply_markup=reply_markup
-        )
-        return UCHASTOK
-
-    # Вопрос о хирургической должности для врача в стационаре
-    if (
-        context.user_data.get("specialty") == "Врач"
-        and context.user_data.get("org_type") == "Стационар"
-        and "is_surgery" not in context.user_data
-    ):
-        keyboard = [["Да", "Нет"]]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
-        await update.message.reply_text(
-            "Ваша должность хирургическая?",
-            reply_markup=reply_markup
-        )
-        return UCHASTOK
-
-    # Вопрос о старшей медсестре для медсестры
-    if (
-        context.user_data.get("specialty") == "Медсестра"
-        and "senior_nurse" not in context.user_data
-    ):
-        keyboard = [["Да", "Нет"]]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
-        await update.message.reply_text(
-            "Вы являетесь старшей медсестрой?",
-            reply_markup=reply_markup
-        )
-        return UCHASTOK
-
-    # Уточняющий вопрос для медсестры в поликлинике
-    if (
-        context.user_data.get("specialty") == "Медсестра"
-        and context.user_data.get("org_type") == "Поликлиника"
-        and "is_uchastok" not in context.user_data
-    ):
-        keyboard = [["Да", "Нет"]]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
-        await update.message.reply_text(
-            "Относится ли ваша должность к участковым специалистам?",
-            reply_markup=reply_markup
-        )
-        return UCHASTOK
+        await update.message.reply_text("Пожалуйста, выберите тип медорганизации:", reply_markup=reply_markup)
+        return ORG_TYPE
 
     answers = {
         "role": context.user_data.get("specialty"),
@@ -162,6 +155,8 @@ async def org_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total = result["total_salary"]
     base_oklad = result["base_oklad"]
     allowances = result["allowances"]
+    ets_coeff = result.get("ets_coeff")
+    role_multiplier = result.get("role_multiplier")
 
     param_names = {
         "specialty": "должность",
@@ -175,9 +170,22 @@ async def org_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "is_surgery": "хирургическая должность",
         "senior_nurse": "старшая медсестра",
     }
-    summary = "\n".join([
-        f"{param_names.get(k, k)}: {v}" for k, v in context.user_data.items() if k in param_names
-    ])
+    # Выводить "Да"/"Нет" для хирургической должности
+    def surgery_ru(val):
+        if isinstance(val, bool):
+            return "Да" if val else "Нет"
+        if val in [True, "Да"]:
+            return "Да"
+        if val in [False, "Нет"]:
+            return "Нет"
+        return val
+    summary_lines = []
+    for k in param_names:
+        v = context.user_data.get(k)
+        if k == "is_surgery":
+            v = surgery_ru(v)
+        summary_lines.append(f"{param_names[k]}: {v}")
+    summary = "\n".join(summary_lines)
 
     allowance_names = {
         "k1": "Экологическая зона",
@@ -187,24 +195,53 @@ async def org_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "k5": "Психоэмоц напряжение",
         "special": "Особые условия труда",
     }
+    # Не показывать надбавку "Старшая медсестра" для врача
+    role = context.user_data.get("specialty")
     allowance_details = "\n".join([
-        f"{allowance_names.get(k, k)}: {round(v, 2) if k == 'special' else v}" for k, v in allowances.items() if k in allowance_names
+        f"{allowance_names.get(k, k)}: {round(v, 2) if k == 'special' else v}"
+        for k, v in allowances.items()
+        if k in allowance_names and not (k == "k3" and role == "Врач")
     ])
 
+    # Формируем строку с сомножителями
+    multipliers = ""
+    # Для врачей и медсестер — фиксированные значения
+    role_mult_val = None
+    if context.user_data.get("specialty") == "Врач":
+        role_mult_val = 3.42
+    elif context.user_data.get("specialty") == "Медсестра":
+        role_mult_val = 2.34
+    if ets_coeff is not None or role_mult_val is not None:
+        parts = []
+        if ets_coeff is not None:
+            parts.append(f"ETS coeff: {ets_coeff}")
+        if role_mult_val is not None:
+            parts.append(f"Role multiplier: {role_mult_val}")
+        multipliers = f" ({' '.join(parts)})"
     await update.message.reply_text(
         f"Спасибо! Ваши параметры:\n{summary}\n\n"
-        f"Должностной оклад: {base_oklad} KZT\n"
+        f"Должностной оклад: {base_oklad} KZT{multipliers}\n"
         f"Надбавки:\n{allowance_details}\n"
-        f"\nРасчёт завершён!\nВаша зарплата: {total} KZT"
+        f"\nРасчёт завершён!\nВаша зарплата: {total} KZT\n"
+        f"Это предварительная начисленная зарплата. Реальные расчеты могут быть меньше примерно на 20%: 10% обязательные пенсионные взносы и 10% подоходный налог."
     )
     return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Диалог отменён.")
+    if update.message and hasattr(update.message, "reply_text"):
+        await update.message.reply_text("Диалог отменён.")
     return ConversationHandler.END
 
 # Добавить обработку ответа на уточняющий вопрос
 async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return ConversationHandler.END
+    if not update.message:
+        return ConversationHandler.END
+    if context.user_data is None:
+        context.user_data = {}
+    if context.user_data is None:
+        context.user_data = {}
     text = update.message.text
     # Определяем, какой параметр ожидается
     if "is_surgery" not in context.user_data and context.user_data.get("specialty") == "Врач":
@@ -235,6 +272,7 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Бактериологическая лаборатория", "Цитологическая лаборатория", "Морг и патоморфологическая лаборатория"
     ]:
         context.user_data["hazard_profile"] = text
+        # После выбора отделения сразу переходить к расчету
         return await org_type(update, context)
     elif "senior_nurse" not in context.user_data and context.user_data.get("specialty") == "Медсестра":
         context.user_data["senior_nurse"] = text == "Да"
@@ -242,25 +280,314 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["is_uchastok"] = text == "Да"
     return await org_type(update, context)
 
-app = Application.builder().token(TOKEN).build()
+app = Application.builder().token(str(TOKEN)).build()
 
+async def exit_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message and hasattr(update.message, "reply_text"):
+        await update.message.reply_text("Спасибо за использование бота! До свидания.")
+    if isinstance(context.user_data, dict):
+        context.user_data.clear()
+    return ConversationHandler.END
+
+# --- Запуск приложения ---
 conv_handler = ConversationHandler(
     entry_points=[
-        CommandHandler("start", start),
-        MessageHandler(filters.Regex("^(Старт|старт)$") & ~filters.COMMAND, start)
+        CommandHandler("start", restart_handler),
+        MessageHandler(filters.Regex("^(Старт|старт)$") & ~filters.COMMAND, restart_handler)
     ],
     states={
-        SPECIALTY: [MessageHandler(filters.TEXT & ~filters.COMMAND, specialty)],
-        EDUCATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, education)],
-        EXPERIENCE: [MessageHandler(filters.TEXT & ~filters.COMMAND, experience)],
-        CATEGORY: [MessageHandler(filters.TEXT & ~filters.COMMAND, category)],
-        ZONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, zone)],
-        LOCALITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, locality)],
-        ORG_TYPE: [MessageHandler(filters.TEXT & ~filters.COMMAND, org_type)],
-        UCHASTOK: [MessageHandler(filters.TEXT & ~filters.COMMAND, uchastok_handler)],
+        SPECIALTY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, specialty),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        EDUCATION: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, education),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        EXPERIENCE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, experience),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        CATEGORY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, category),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        ZONE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, zone),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        LOCALITY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, locality),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        ORG_TYPE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, org_type),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        UCHASTOK: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, uchastok_handler),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
     },
-    fallbacks=[CommandHandler("cancel", cancel)],
+    fallbacks=[
+        CommandHandler("cancel", exit_handler),
+        MessageHandler(filters.Regex("^Выход$"), exit_handler),
+        MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler)
+    ],
 )
+if not TOKEN:
+    print("Ошибка: TELEGRAM_TOKEN не задан в переменных окружения.")
+    exit(1)
+app = Application.builder().token(str(TOKEN)).build()
+app.add_handler(conv_handler)
+app.run_polling()
 
+# --- Запуск приложения ---
+conv_handler = ConversationHandler(
+    entry_points=[
+        CommandHandler("start", restart_handler),
+        MessageHandler(filters.Regex("^(Старт|старт)$") & ~filters.COMMAND, restart_handler)
+    ],
+    states={
+        SPECIALTY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, specialty),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        EDUCATION: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, education),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        EXPERIENCE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, experience),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        CATEGORY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, category),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        ZONE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, zone),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        LOCALITY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, locality),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        ORG_TYPE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, org_type),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        UCHASTOK: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, uchastok_handler),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+    },
+    fallbacks=[
+        CommandHandler("cancel", exit_handler),
+        MessageHandler(filters.Regex("^Выход$"), exit_handler),
+        MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler)
+    ],
+)
+if not TOKEN:
+    print("Ошибка: TELEGRAM_TOKEN не задан в переменных окружения.")
+    exit(1)
+app = Application.builder().token(str(TOKEN)).build()
+app.add_handler(conv_handler)
+app.run_polling()
+
+# --- Запуск приложения ---
+conv_handler = ConversationHandler(
+    entry_points=[
+        CommandHandler("start", restart_handler),
+        MessageHandler(filters.Regex("^(Старт|старт)$") & ~filters.COMMAND, restart_handler)
+    ],
+    states={
+        SPECIALTY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, specialty),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        EDUCATION: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, education),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        EXPERIENCE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, experience),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        CATEGORY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, category),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        ZONE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, zone),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        LOCALITY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, locality),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        ORG_TYPE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, org_type),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        UCHASTOK: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, uchastok_handler),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+    },
+    fallbacks=[
+        CommandHandler("cancel", exit_handler),
+        MessageHandler(filters.Regex("^Выход$"), exit_handler),
+        MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler)
+    ],
+)
+if not TOKEN:
+    print("Ошибка: TELEGRAM_TOKEN не задан в переменных окружения.")
+    exit(1)
+app = Application.builder().token(str(TOKEN)).build()
+app.add_handler(conv_handler)
+app.run_polling()
+conv_handler = ConversationHandler(
+    entry_points=[
+        CommandHandler("start", restart_handler),
+        MessageHandler(filters.Regex("^(Старт|старт)$") & ~filters.COMMAND, restart_handler)
+    ],
+    states={
+        SPECIALTY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, specialty),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        EDUCATION: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, education),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        EXPERIENCE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, experience),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        CATEGORY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, category),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        ZONE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, zone),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        LOCALITY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, locality),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        ORG_TYPE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, org_type),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        UCHASTOK: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, uchastok_handler),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+    },
+    fallbacks=[
+        CommandHandler("cancel", exit_handler),
+        MessageHandler(filters.Regex("^Выход$"), exit_handler),
+        MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler)
+    ],
+)
+if not TOKEN:
+    print("Ошибка: TELEGRAM_TOKEN не задан в переменных окружения.")
+    exit(1)
+app = Application.builder().token(TOKEN).build()
+app.add_handler(conv_handler)
+app.run_polling()
+
+# --- Запуск приложения ---
+conv_handler = ConversationHandler(
+    entry_points=[
+        CommandHandler("start", restart_handler),
+        MessageHandler(filters.Regex("^(Старт|старт)$") & ~filters.COMMAND, restart_handler)
+    ],
+    states={
+        SPECIALTY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, specialty),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        EDUCATION: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, education),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        EXPERIENCE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, experience),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        CATEGORY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, category),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        ZONE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, zone),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        LOCALITY: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, locality),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        ORG_TYPE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, org_type),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+        UCHASTOK: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, uchastok_handler),
+            MessageHandler(filters.Regex("^Выход$"), exit_handler),
+            MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler),
+        ],
+    },
+    fallbacks=[
+        CommandHandler("cancel", exit_handler),
+        MessageHandler(filters.Regex("^Выход$"), exit_handler),
+        MessageHandler(filters.Regex("^(Старт|старт)$"), restart_handler)
+    ],
+)
+if not TOKEN:
+    print("Ошибка: TELEGRAM_TOKEN не задан в переменных окружения.")
+    exit(1)
+app = Application.builder().token(TOKEN).build()
 app.add_handler(conv_handler)
 app.run_polling()
