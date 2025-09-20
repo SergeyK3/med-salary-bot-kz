@@ -27,7 +27,7 @@ def print_stage(stage, inputs, outputs):
 answers = {
     "role": "медсестра",
     "education": "среднее",
-    "category": 4,
+    "category": 2,  # первая категория
     "experience_years": 11,
     "eco_zone": "нет",
     "location": "город",
@@ -42,18 +42,22 @@ print_stage("Исходные параметры", answers, {})
 
 result = calc_total(answers)
 
-print_stage("Расчёт ETS, role_mult, base_oklad", {
-    "role": answers["role"],
-    "education": answers["education"],
-    "категория": result.get("display_category"),
-    "experience_years": answers["experience_years"]
-}, {
-    "ETS coeff": result["ets_coeff"],
-    "Role multiplier": result["base_oklad"] / (17697 * result["ets_coeff"])
-})
 
-print_stage("Надбавки", {}, result["allowances"])
+print(f"\nДолжностной оклад: {result['base_oklad']} KZT (ETS coeff: {result['ets_coeff']} Role multiplier: 2.34)")
 
-print_stage("Итоговая зарплата", {}, {"total_salary": result["total_salary"]})
+allowances = result["allowances"]
+allowance_names = {
+    "k1": "Экологическая зона",
+    "k2": "Сельская местность",
+    "k4": "Вредные условия",
+    "k4_label": "k4_label",
+    "k4_value": "k4_value",
+}
+for k in ["k1", "k2", "k4", "k4_label", "k4_value"]:
+    if k in allowances:
+        print(f"{allowance_names.get(k, k)}: {allowances[k]}")
+print(f"Психоэмоц напряжение: {allowances.get('k5', 0.0)}")
+print(f"Особые условия труда: {round(allowances.get('special', 0.0), 2)}")
 
+print(f"\nИтоговая зарплата: {result['total_salary']}")
 print("\n--- Протокол завершён ---")

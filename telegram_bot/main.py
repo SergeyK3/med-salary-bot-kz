@@ -239,13 +239,15 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
         "is_surgery": "хирургическая должность",
     }
     def surgery_ru(val):
+        if val is None:
+            return "нет"
         if isinstance(val, bool):
-            return "Да" if val else "Нет"
-        if val in [True, "Да"]:
-            return "Да"
-        if val in [False, "Нет"]:
-            return "Нет"
-        return val
+            return "да" if val else "нет"
+        if str(val).strip().lower() in ["да", "true", "1"]:
+            return "да"
+        if str(val).strip().lower() in ["нет", "false", "0"]:
+            return "нет"
+        return str(val)
     summary_lines = []
     for k in param_names:
         v = context.user_data.get(k)
@@ -362,7 +364,8 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             v = surgery_ru(v)
         if k == "category":
             try:
-                v = category_map.get(int(v), v)
+                if v is not None and str(v).isdigit():
+                    v = category_map.get(int(v), v)
             except Exception:
                 pass
         summary_lines.append(f"{param_names[k]}: {v}")

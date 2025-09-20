@@ -10,8 +10,8 @@ def role_coeff(role: str, settings: dict) -> float:
     r = role.strip().lower()
     if r.startswith("врач"):
         return float(settings["role_coefficients"]["врач"])
-    if r.startswith("сест"):
-        return float(settings["role_coefficients"]["сестра"])
+    if r.startswith("сест") or r.startswith("медсестра"):
+        return float(settings["role_coefficients"]["медсестра"])
     return float(settings["role_coefficients"]["младший"])
 
 
@@ -29,10 +29,11 @@ def calc_total(answers: dict) -> dict:
         float(exp),
     )
     role_mult = role_coeff(answers["role"], settings)
-    print("ETS coeff:", ets, "Role multiplier:", role_mult)  # Для отладки
+    BDO_val = float(settings["BDO"])
+    print(f"DEBUG: BDO={BDO_val}, ETS coeff={ets}, Role multiplier={role_mult}, role={answers['role']}, education={answers.get('education')}, category={answers.get('category')}, exp={answers.get('experience_years')}")
 
     # должностной оклад с учетом дополнительного коэффициента
-    base_oklad_raw = float(settings["BDO"]) * ets * role_mult
+    base_oklad_raw = BDO_val * ets * role_mult
     base_oklad = round(base_oklad_raw, 2)
 
 
