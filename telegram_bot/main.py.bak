@@ -29,8 +29,7 @@ async def restart_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data.clear()
     keyboard = [["врач", "медсестра", "другое"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
-    if update.message:
-        await update.message.reply_text(
+    await update.message.reply_text(
         "Выберите вашу должность:",
         reply_markup=reply_markup
     )
@@ -43,15 +42,12 @@ async def specialty(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data is None:
         context.user_data = {}
     context.user_data["specialty"] = str(update.message.text).strip().lower()
-    import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
-        json.dump(context.user_data, f, ensure_ascii=False, indent=2)
-    if update.message and update.message.text and update.message.text.strip().lower() == "медсестра":
+    if update.message.text.strip().lower() == "медсестра":
         keyboard = [["высшее", "среднее"]]
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
         await update.message.reply_text("Укажите образование:", reply_markup=reply_markup)
         return EDUCATION
-    elif update.message and update.message.text and update.message.text.strip().lower() == "врач":
+    elif update.message.text.strip().lower() == "врач":
         context.user_data["education"] = "высшее"
         await update.message.reply_text("Введите ваш опыт работы (лет):")
         return EXPERIENCE
@@ -61,18 +57,14 @@ async def specialty(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def education(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"education: user_id={update.effective_user.id if update.effective_user else None}, message={update.message.text if update.message else None}")
-    if context.user_data and context.user_data.get("specialty") == "медсестра":
-        if update.message and update.message.text:
-            context.user_data["education"] = str(update.message.text).strip().lower()
-    else:
-        if context.user_data is not None:
-            context.user_data["education"] = "—"
-    import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
-        json.dump(context.user_data, f, ensure_ascii=False, indent=2)
-    if update.message:
+    if context.user_data.get("specialty") == "медсестра":
+        context.user_data["education"] = str(update.message.text).strip().lower()
         await update.message.reply_text("Введите ваш опыт работы (лет):")
-    return EXPERIENCE
+        return EXPERIENCE
+    else:
+        context.user_data["education"] = "—"
+        await update.message.reply_text("Введите ваш опыт работы (лет):")
+        return EXPERIENCE
 
 async def experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"experience: user_id={update.effective_user.id if update.effective_user else None}, message={update.message.text if update.message else None}")
@@ -81,9 +73,6 @@ async def experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data is None:
         context.user_data = {}
     context.user_data["experience"] = update.message.text
-    import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
-        json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     keyboard = [["высшая", "первая"], ["вторая", "нет категории"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
     await update.message.reply_text("Выберите вашу категорию:", reply_markup=reply_markup)
@@ -103,9 +92,6 @@ async def category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "нет категории": 4
     }
     context.user_data["category"] = cat_map.get(cat_text, cat_text)
-    import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
-        json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     keyboard = [["да", "нет"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
     await update.message.reply_text("Ваша работа относится к зоне экологического неблагополучия?", reply_markup=reply_markup)
@@ -117,9 +103,6 @@ async def zone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
     if context.user_data is None:
         context.user_data = {}
-    import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
-        json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     if str(update.message.text).strip().lower() == "да":
         zone_keyboard = [
             ["экол. катастрофы", "экол. кризиса"],
@@ -145,9 +128,6 @@ async def locality(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data is None:
         context.user_data = {}
     context.user_data["locality"] = str(update.message.text).strip().lower()
-    import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
-        json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     keyboard = [["стационар", "поликлиника"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
     await update.message.reply_text("Выберите тип медорганизации:", reply_markup=reply_markup)
@@ -168,9 +148,6 @@ async def org_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ORG_TYPE
 
     context.user_data["org_type"] = org_type_value
-    import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
-        json.dump(context.user_data, f, ensure_ascii=False, indent=2)
 
     if org_type_value == "стационар":
         keyboard = [["клиническое", "неклиническое"]]
@@ -192,9 +169,6 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
     dept_text = update.message.text if update.message and update.message.text else ""
     dept = str(dept_text).strip().lower()
     context.user_data["clinical_dept"] = dept
-    import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
-        json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     if dept == "клиническое":
         keyboard = [["да", "нет"]]
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -211,15 +185,12 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
         "eco_zone": context.user_data.get("zone"),
         "location": context.user_data.get("locality"),
         "facility": str(context.user_data.get("org_type", "")).strip().lower(),
-        "clinical_dept": dept,  # Явно передаём выбранный признак
+        "clinical_dept": context.user_data.get("clinical_dept", "неклиническое"),
         "hazard_profile": None,
         "is_surgery": False,
         "is_uchastok": context.user_data.get("is_uchastok", False),
     }
-    # Если отделение неклиническое, k5=0, иначе расчёт по стандартной логике
     result = calc_total(answers)
-    if dept == "неклиническое":
-        result["allowances"]["k5"] = 0
     total = result["total_salary"]
     base_oklad = result["base_oklad"]
     allowances = result["allowances"]
@@ -300,9 +271,6 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data is None:
         context.user_data = {}
     text = str(update.message.text).strip().lower() if update.message and update.message.text else ""
-    import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
-        json.dump(context.user_data, f, ensure_ascii=False, indent=2)
 
     # Для стационара — хирургия
     if context.user_data.get("org_type") == "стационар":

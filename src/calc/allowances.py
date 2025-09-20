@@ -33,14 +33,12 @@ def k2_amount(location: str, base_oklad: float) -> float:
     return 0.0
 
 # --- K3 ---
-def k3_amount(senior_nurse: bool, base_oklad: float) -> float:
-    # Надбавка 5% только для старшей медсестры
-    if senior_nurse:
-        return 0.05 * base_oklad
+def k3_amount(base_oklad: float) -> float:
+    # Надбавка 5% для старшей медсестры (логика может быть изменена)
     return 0.0
 
-def calc_k3(is_head: bool, _settings: Optional[dict] = None) -> float:
-    return k3_amount(is_head)
+def calc_k3(base_oklad: float, _settings: Optional[dict] = None) -> float:
+    return k3_amount(base_oklad)
 
 # --- Senior Nurse ---
 def senior_nurse_amount(is_senior_nurse: bool) -> float:
@@ -61,29 +59,29 @@ def k4_amount(hazard_profile: Optional[str], base_oklad: float) -> tuple[float, 
     label = row.get('label', '') if 'label' in row else ''
     return value * base_oklad, label, value
 
-def calc_k4(hazard_profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
-    return k4_amount(hazard_profile, base_oklad)
 
 # --- K5 ---
-def k5_amount(location, role, is_surgery, is_district, base_oklad):
+def k5_amount(location, role, is_surgery, is_uchastok, base_oklad):
+    # Надбавка за психоэмоциональное напряжение считается от BDO (settings.yml)
+    BDO = float(S["BDO"])
     if role == "врач":
         if location == "стационар":
             if is_surgery:
-                return base_oklad * 1.5
+                return BDO * 1.5
             else:
-                return base_oklad * 0.8
-        elif is_district:
-            return base_oklad * 2.0
+                return BDO * 0.8
+        elif is_uchastok:
+            return BDO * 2.0
         else:
             return 0.0
     elif role == "сестра":
         if location == "стационар":
             if is_surgery:
-                return base_oklad * 0.8
+                return BDO * 0.8
             else:
-                return base_oklad * 0.4
-        elif is_district:
-            return base_oklad * 1.5
+                return BDO * 0.4
+        elif is_uchastok:
+            return BDO * 1.5
         else:
             return 0.0
     return 0.0
@@ -107,8 +105,24 @@ def calc_k2(location: str, base_oklad: float, _settings: Optional[dict] = None) 
 def calc_k4(hazard_profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
     return k4_amount(hazard_profile, base_oklad)
 def calc_k5(role, facility, is_surgery, is_uchastok, bdo):
+    # Врач-хирург стационара
     if role == "врач" and facility == "стационар" and is_surgery and not is_uchastok:
         return round(1.5 * bdo, 2)
+    # Участковый врач (поликлиника)
+    if role == "врач" and is_uchastok:
+        return round(2.0 * bdo, 2)
+    # Участковая медсестра (поликлиника)
+    if role == "сестра" and is_uchastok:
+        return round(1.5 * bdo, 2)
+    # Врач-стационар, не хирург
+    if role == "врач" and facility == "стационар" and not is_surgery:
+        return round(0.8 * bdo, 2)
+    # Медсестра-стационар, хирург
+    if role == "сестра" and facility == "стационар" and is_surgery:
+        return round(0.8 * bdo, 2)
+    # Медсестра-стационар, не хирург
+    if role == "сестра" and facility == "стационар" and not is_surgery:
+        return round(0.4 * bdo, 2)
     return 0.0
 def calc_k6(is_uchastok: bool, role: str, _settings: Optional[dict] = None) -> float:
     return k6_amount(is_uchastok, role)

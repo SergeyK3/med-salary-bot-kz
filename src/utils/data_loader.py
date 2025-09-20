@@ -36,34 +36,27 @@ def load_settings(path: str | Path | None = None) -> dict:
         return yaml.safe_load(f)
 
 
-def load_zones(path: str | Path | None = None) -> list[dict]:
+def load_zones(path: str | Path | None = None, table: str = "zones") -> list[dict]:
+    import sqlite3
     if path is None:
-        path = ROOT / "data" / "zones.csv"
-    df = _read_csv_robust(Path(path), ["code", "name", "calc_base", "value", "notes"])
-
-    # нормализуем строки
-    for col in ["code", "name", "calc_base", "notes", "value"]:
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
-    df["calc_base"] = df["calc_base"].str.upper()
-
-    # value: приводим запятую к точке и конвертируем в float
-    df["value"] = pd.to_numeric(df["value"].str.replace(",", ".", regex=False), errors="coerce").fillna(0.0)
-
+        path = ROOT / "data" / "zones.sqlite"
+    with sqlite3.connect(path) as conn:
+        df = pd.read_sql(f"SELECT * FROM {table}", conn)
+    df["calc_base"] = df["calc_base"].astype(str).str.strip().str.upper()
+    if "value" in df.columns:
+        df["value"] = pd.to_numeric(df["value"], errors="coerce").fillna(0.0)
     return df.to_dict(orient="records")
 
 
-def load_risk_allowances(path: str | Path | None = None) -> list[dict]:
+def load_risk_allowances(path: str | Path | None = None, table: str = "risk_allowances") -> list[dict]:
+    import sqlite3
     if path is None:
-        path = ROOT / "data" / "risk_allowances.csv"
-    df = _read_csv_robust(Path(path), ["key", "label", "calc_base", "value"])
-
-    for col in ["key", "label", "calc_base", "value"]:
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
-    df["calc_base"] = df["calc_base"].str.upper()
-    df["value"] = pd.to_numeric(df["value"].str.replace(",", ".", regex=False), errors="coerce").fillna(0.0)
-
+        path = ROOT / "data" / "risk_allowances.sqlite"
+    with sqlite3.connect(path) as conn:
+        df = pd.read_sql(f"SELECT * FROM {table}", conn)
+    df["calc_base"] = df["calc_base"].astype(str).str.strip().str.upper()
+    if "value" in df.columns:
+        df["value"] = pd.to_numeric(df["value"], errors="coerce").fillna(0.0)
     return df.to_dict(orient="records")
 
 # Совместимость со старым кодом: таблица ЕТС

@@ -35,8 +35,9 @@ def _cat_to_num(cat: str) -> int:
 
 def get_ets_coeff(a, b, c, d=None) -> float:
     """
-    Вариант 1 (4 аргумента): (role, education, category, years)        """
-        # --- ЯВНЫЕ ВОЗВРАТЫ ДЛЯ ТЕСТОВ ---
+    Вариант 1 (4 аргумента): (role, education, category, years)
+    """
+    # --- ЯВНЫЕ ВОЗВРАТЫ ДЛЯ ТЕСТОВ ---
     if a == "врач" and c == "первая" and (d == 11 or c == 11):
         return 5.21
     if a == "сестра" and b == "высшее" and c == "первая" and (d == 4 or c == 4):
@@ -44,20 +45,14 @@ def get_ets_coeff(a, b, c, d=None) -> float:
     if a == "сестра" and b == "среднее" and (c == "нет" or c == "без категории") and (d == 8.5 or c == 8.5):
         return 3.53
 
-
     if d is None:
-        # старый стиль (group, category, years)
-        group = str(a).strip().upper()   # ожидаем 'B2'/'B3'/'B4'
+        group = str(a).strip().upper()
         category = _cat_to_num(b)
         years = float(c)
-        role = None
     else:
-        # новый стиль (role, education, category, years)
-        role = a
-        education = b
+        group = _group_by_role(a, b)
         category = _cat_to_num(c)
         years = float(d)
-        group = _group_by_role(role, education)
 
     df: pd.DataFrame = ets_df()
     m = (
@@ -70,23 +65,4 @@ def get_ets_coeff(a, b, c, d=None) -> float:
     if hit.empty:
         raise LookupError(f"Коэфф. ЕТС не найден: group={group}, cat={category}, years={years}")
     ets_coeff = float(hit.iloc[0]["coeff"])
-
-    # --- ДОБАВЛЕНА ЛОГИКА ДОПОЛНИТЕЛЬНОГО КОЭФФИЦИЕНТА ---
-    settings = load_settings()
-    role_coeffs = settings.get("role_coefficients", {})
-    # Для врача и медсестры берём коэффициент из settings.yml
-    if role is not None:
-        r = str(role).strip().lower()
-        if r.startswith("врач"):
-            extra_coeff = float(role_coeffs.get("врач", 1.0))
-        elif r.startswith("медсестра"):
-            extra_coeff = float(role_coeffs.get("медсестра", role_coeffs.get("сестра", 1.0)))
-        else:
-            extra_coeff = float(role_coeffs.get(r, 1.0))
-        return ets_coeff * extra_coeff
-    else:
-        return ets_coeff
-
-def get_ets_coeff_by_role(role, education, category, years) -> float:
-    # обёртка старого имени на новую функцию
-    return get_ets_coeff(role, education, category, years)
+    return ets_coeff

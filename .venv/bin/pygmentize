@@ -1,4 +1,4 @@
-#!/workspaces/med-salary-bot-kz/.venv/bin/python
+#!/workspaces/med-salary-bot-kz/.venv/bin/python3
 import sys
 from pygments.cmdline import main
 if __name__ == '__main__':
