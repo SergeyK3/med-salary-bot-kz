@@ -341,6 +341,12 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "is_uchastok": "участковый специалист",
         "is_surgery": "хирургическая должность",
     }
+    category_map = {
+        1: "высшая",
+        2: "первая",
+        3: "вторая",
+        4: "без категории"
+    }
     def surgery_ru(val):
         if isinstance(val, bool):
             return "Да" if val else "Нет"
@@ -354,6 +360,11 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         v = context.user_data.get(k)
         if k == "is_surgery":
             v = surgery_ru(v)
+        if k == "category":
+            try:
+                v = category_map.get(int(v), v)
+            except Exception:
+                pass
         summary_lines.append(f"{param_names[k]}: {v}")
     summary = "\n".join(summary_lines)
 

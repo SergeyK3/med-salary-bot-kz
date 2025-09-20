@@ -4,10 +4,23 @@ from src.calc.totals import calc_total
 def print_stage(stage, inputs, outputs):
     print(f"\n=== {stage} ===")
     print("Входные данные:")
+    category_map = {
+        1: "высшая",
+        2: "первая",
+        3: "вторая",
+        4: "без категории"
+    }
     for k, v in inputs.items():
+        if k == "category" or k == "категория":
+            try:
+                v = category_map.get(int(v), v)
+            except Exception:
+                pass
         print(f"  {k}: {v}")
     print("Выходные данные:")
     for k, v in outputs.items():
+        if k == "special":
+            v = round(v, 2)
         print(f"  {k}: {v}")
 
 # Пример параметров (можно заменить на любые)

@@ -103,7 +103,6 @@ def calc_total(answers: dict) -> dict:
         "allowances": {
             "k1": k1,
             "k2": k2,
-            "k3": k3,
             "k4": k4,
             "k4_label": k4_label,
             "k4_value": k4_value,
