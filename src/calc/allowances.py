@@ -112,7 +112,7 @@ def calc_k5(role, facility, is_surgery, is_uchastok, bdo):
     if role == "врач" and is_uchastok:
         return round(2.0 * bdo, 2)
     # Участковая медсестра (поликлиника)
-    if role == "сестра" and is_uchastok:
+    if role in ["сестра", "медсестра"] and is_uchastok:
         return round(1.5 * bdo, 2)
     # Врач-стационар, не хирург
     if role == "врач" and facility == "стационар" and not is_surgery:

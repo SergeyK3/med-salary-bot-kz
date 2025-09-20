@@ -11,6 +11,8 @@ def print_stage(stage, inputs, outputs):
         4: "без категории"
     }
     for k, v in inputs.items():
+        if k == "clinical_dept" and answers.get("facility") == "поликлиника":
+            continue
         if k == "category" or k == "категория":
             try:
                 v = category_map.get(int(v), v)

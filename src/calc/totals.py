@@ -30,7 +30,6 @@ def calc_total(answers: dict) -> dict:
     )
     role_mult = role_coeff(answers["role"], settings)
     BDO_val = float(settings["BDO"])
-    print(f"DEBUG: BDO={BDO_val}, ETS coeff={ets}, Role multiplier={role_mult}, role={answers['role']}, education={answers.get('education')}, category={answers.get('category')}, exp={answers.get('experience_years')}")
 
     # должностной оклад с учетом дополнительного коэффициента
     base_oklad_raw = BDO_val * ets * role_mult

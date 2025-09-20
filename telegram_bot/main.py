@@ -387,9 +387,7 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for k, v in allowances.items():
         if k == "k3" and role == "врач":
             continue
-        if k == "k5" and role == "медсестра" and org_type == "поликлиника" and is_uchastok:
-            v = round(base_oklad * 1.5, 2)
-        elif k == "special":
+        if k == "special":
             v = round(v, 2)
         allowance_details.append(f"{allowance_names.get(k, k)}: {v}")
     allowance_details = "\n".join(allowance_details)
