@@ -1,7 +1,6 @@
 # coding: utf-8
 from src.config import load_settings
 from src.calc.base_oklad import get_ets_coeff
-from src.calc.allowances import k3_amount
 from src.calc.allowances import (
     calc_k1, calc_k2, calc_k3, calc_k4, calc_k5, calc_senior_nurse, special_conditions
 )
@@ -31,10 +30,10 @@ def calc_total(answers: dict) -> dict:
     base_oklad = round(base_oklad_raw, 2)
 
 
-    k1 = calc_k1(answers.get("eco_zone"), settings)    
+    k1 = calc_k1(answers.get("eco_zone"), base_oklad)
     k2 = calc_k2(answers["location"], base_oklad)
     
-    k3 = k3_amount(answers.get("senior_nurse", False), base_oklad)    
+    k3 = calc_k3(answers.get("senior_nurse", False), base_oklad)
 
     k4, k4_label, k4_value = calc_k4(answers.get("hazard_profile"), base_oklad)
     k5 = calc_k5(

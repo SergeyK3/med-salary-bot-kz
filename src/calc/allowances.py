@@ -39,8 +39,8 @@ def k3_amount(senior_nurse: bool, base_oklad: float) -> float:
         return 0.05 * base_oklad
     return 0.0
 
-def calc_k3(is_head: bool, _settings: Optional[dict] = None) -> float:
-    return k3_amount(is_head)
+def calc_k3(senior_nurse: bool, base_oklad: float, _settings: Optional[dict] = None) -> float:
+    return k3_amount(senior_nurse, base_oklad)
 
 # --- Senior Nurse ---
 def senior_nurse_amount(is_senior_nurse: bool) -> float:
@@ -103,9 +103,8 @@ def special_amount(base_oklad: float) -> float:
 # Алиасы (совместимость)
 def calc_k1(eco_code: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> float:
     return k1_amount(eco_code, base_oklad)
-def calc_k2(location: str, base_oklad: float, _settings: Optional[dict] = None) -> float:        return k2_amount(location, base_oklad)
-def calc_k4(hazard_profile: Optional[str], base_oklad: float, _settings: Optional[dict] = None) -> tuple[float, str, float]:
-    return k4_amount(hazard_profile, base_oklad)
+def calc_k2(location: str, base_oklad: float, _settings: Optional[dict] = None) -> float:
+    return k2_amount(location, base_oklad)
 def calc_k5(role, facility, is_surgery, is_uchastok, bdo):
     if role == "врач" and facility == "стационар" and is_surgery and not is_uchastok:
         return round(1.5 * bdo, 2)
