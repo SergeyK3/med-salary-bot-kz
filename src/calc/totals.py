@@ -60,7 +60,21 @@ def calc_total(answers: dict) -> dict:
         hazard_profile = None
     elif isinstance(hazard_profile, dict):
         hazard_profile = hazard_profile.get("value", None)
-    k4, k4_label, k4_value = calc_k4(hazard_profile, base_oklad)
+    # Вредность (k4) считается от БДО (settings.yml)
+    k4, k4_label, k4_value = calc_k4(hazard_profile, BDO_val)
+    # Fallback: если ключ вредности не распознан (k4==0), но передано явное значение вредности
+    try:
+        hazard_value_param = answers.get("hazard_value")
+        if (k4 is None or float(k4) == 0.0) and hazard_value_param is not None:
+            hv = float(hazard_value_param)
+            if hv > 0:
+                # fallback тоже от БДО
+                k4 = hv * BDO_val
+                # Метка — используем то, что пришло как hazard_profile (скорее всего русское название отделения)
+                k4_label = str(answers.get("hazard_profile") or "")
+                k4_value = hv
+    except Exception:
+        pass
 
     facility = answers.get("facility", "")
     if facility is None:
@@ -74,9 +88,18 @@ def calc_total(answers: dict) -> dict:
         bool(answers.get("is_uchastok")),
         float(settings["BDO"])
     )
+    # Неклиническое отделение стационара: доплата за психоэмоциональное напряжение не применяется
+    clinical_dept = answers.get("clinical_dept")
+    if str(facility).strip().lower() == "стационар" and str(clinical_dept or "").strip().lower() == "неклиническое":
+        k5 = 0.0
 
     k_spec = special_conditions(base_oklad)
 
+    # Округляем k4 до двух знаков для стабильного отображения
+    try:
+        k4 = round(float(k4), 2)
+    except Exception:
+        pass
     # итоговую сумму тоже округляем до двух знаков после запятой
     total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + k_spec
     total = round(total_raw, 2)

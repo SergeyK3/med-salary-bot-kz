@@ -152,15 +152,38 @@ async def hazard_dept_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
     if context.user_data is None:
         context.user_data = {}
     context.user_data["hazard_dept"] = dept
-    # Получить размер доплаты из risk_allowances.sqlite
-    from src.utils.data_io import read_risk_allowances
-    df = read_risk_allowances()
-    value = 0
-    if dept and df is not None and "department" in df.columns:
-        found = df[df["department"].str.lower() == dept.lower()]
-        if not found.empty and "value" in found.columns:
-            value = float(found.iloc[0]["value"])
-    context.user_data["hazard_value"] = value
+    # Получить ключ/метку/коэффициент из risk_allowances.sqlite через data_loaders.risk_df
+    try:
+        from src.data_loaders import risk_df
+        df = risk_df()
+        df.columns = df.columns.str.strip().str.lower()
+        dept_norm = (dept or "").strip().lower()
+        found_row = None
+        # Пытаемся сопоставить по department, затем по label
+        if "department" in df.columns:
+            found = df[df["department"].astype(str).str.strip().str.lower() == dept_norm]
+            if not found.empty:
+                found_row = found.iloc[0]
+        if found_row is None and "label" in df.columns:
+            found = df[df["label"].astype(str).str.strip().str.lower() == dept_norm]
+            if not found.empty:
+                found_row = found.iloc[0]
+        if found_row is not None:
+            key = str(found_row.get("key")) if "key" in df.columns else None
+            label = str(found_row.get("label")) if "label" in df.columns else None
+            try:
+                value = float(found_row.get("value", 0))
+            except Exception:
+                value = 0.0
+            if key:
+                context.user_data["hazard_profile_key"] = key
+            if label:
+                context.user_data["hazard_label"] = label
+            context.user_data["hazard_value"] = value
+        else:
+            context.user_data["hazard_value"] = 0.0
+    except Exception:
+        context.user_data["hazard_value"] = 0.0
     keyboard = [["да", "нет"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
     await update.message.reply_text("Ваша работа относится к зоне экологического неблагополучия?", reply_markup=reply_markup)
@@ -172,26 +195,98 @@ async def zone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
     if context.user_data is None:
         context.user_data = {}
+    raw_text = str(update.message.text).strip().lower()
+    # Нормализация: убрать точки/лишние пробелы/"ё"
+    def _norm(s: str) -> str:
+        s = (s or "").lower().replace("ё", "е")
+        for ch in [".", ",", ";", ":", "-", "—"]:
+            s = s.replace(ch, " ")
+        s = " ".join(s.split())
+        return s
+    text = _norm(raw_text)
+    # Сопоставление человеко-понятного выбора с кодами в таблице zones (по нормализованным ключам)
+    ru_to_code = {
+        # Эко катастрофы
+        _norm("экол. катастрофы"): "eco_catastrophe",
+        _norm("экологическая катастрофа"): "eco_catastrophe",
+        _norm("экологической катастрофы"): "eco_catastrophe",
+        _norm("зона экологической катастрофы"): "eco_catastrophe",
+        # Эко кризиса
+        _norm("экол. кризиса"): "eco_crisis",
+        _norm("экологический кризис"): "eco_crisis",
+        _norm("экологического кризиса"): "eco_crisis",
+        _norm("зона экологического кризиса"): "eco_crisis",
+        # Эко предкризис
+        _norm("экол. предкризис"): "eco_precrisis",
+        _norm("экологический предкризис"): "eco_precrisis",
+        _norm("предкризис"): "eco_precrisis",
+        # Радиация: чрезвычайный
+        _norm("чрезвыч риск радиации"): "radiation_extreme",
+        _norm("чрезвычайный риск радиации"): "radiation_extreme",
+        _norm("чрезвычайный радиационный риск"): "radiation_extreme",
+        # Радиация: максимальный
+        _norm("максим риск радиации"): "radiation_max",
+        _norm("максимальный риск радиации"): "radiation_max",
+        # Радиация: повышенный
+        _norm("повыш риск радиации"): "radiation_high",
+        _norm("повышенный риск радиации"): "radiation_high",
+        _norm("высокий риск радиации"): "radiation_high",
+        # Радиация: минимальный
+        _norm("миним риск радиации"): "radiation_min",
+        _norm("минимальный риск радиации"): "radiation_min",
+        _norm("низкий риск радиации"): "radiation_min",
+        # Льготный статус
+        _norm("льгот соц-экон статус"): "social_benefit",
+        _norm("льготный социально экономический статус"): "social_benefit",
+        _norm("льготный соц экон статус"): "social_benefit",
+        _norm("льготный статус"): "social_benefit",
+        # Нет зоны
+        _norm("нет"): None,
+        _norm("не относится"): None,
+        _norm("без зоны"): None,
+        _norm("благополучная зона"): None,
+    }
     import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
-        json.dump(context.user_data, f, ensure_ascii=False, indent=2)
-    if str(update.message.text).strip().lower() == "да":
-        zone_keyboard = [
-            ["экол. катастрофы", "экол. кризиса"],
-            ["экол. предкризис", "чрезвыч риск радиации"],
-            ["максим риск радиации", "повыш риск радиации"],
-            ["миним риск радиации", "льгот соц-экон статус"],
-            ["нет"]
-        ]
-        reply_markup = ReplyKeyboardMarkup(zone_keyboard, one_time_keyboard=True, resize_keyboard=True)
-        await update.message.reply_text("Уточните зону:", reply_markup=reply_markup)
-        return ZONE
-    else:
-        context.user_data["zone"] = "нет"
+    # Ветка 1: общий вопрос — «да/нет»
+    if text in ["да", "нет"]:
+        if text == "да":
+            zone_keyboard = [
+                ["экол. катастрофы", "экол. кризиса"],
+                ["экол. предкризис", "чрезвыч риск радиации"],
+                ["максим риск радиации", "повыш риск радиации"],
+                ["миним риск радиации", "льгот соц-экон статус"],
+                ["нет"],
+            ]
+            reply_markup = ReplyKeyboardMarkup(zone_keyboard, one_time_keyboard=True, resize_keyboard=True)
+            await update.message.reply_text("Уточните зону:", reply_markup=reply_markup)
+            return ZONE
+        # Пользователь ответил «нет» на общий вопрос
+        context.user_data["zone"] = "нет"  # для отображения
+        context.user_data["eco_zone_code"] = None  # для расчёта
+        with open("current_params.json", "w", encoding="utf-8") as f:
+            json.dump(context.user_data, f, ensure_ascii=False, indent=2)
         keyboard = [["город", "село"]]
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
         await update.message.reply_text("Вы проживаете в городе или селе?", reply_markup=reply_markup)
         return LOCALITY
+    # Ветка 2: пользователь выбрал конкретную подзону
+    if text in ru_to_code:
+        # сохраняем как исходный вид, чтобы красиво выводить
+        context.user_data["zone"] = raw_text
+        context.user_data["eco_zone_code"] = ru_to_code[text]
+        with open("current_params.json", "w", encoding="utf-8") as f:
+            json.dump(context.user_data, f, ensure_ascii=False, indent=2)
+        keyboard = [["город", "село"]]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+        await update.message.reply_text("Вы проживаете в городе или селе?", reply_markup=reply_markup)
+        return LOCALITY
+    # Некорректный ввод — повторно спрашиваем
+    zone_keyboard = [
+        ["да", "нет"]
+    ]
+    reply_markup = ReplyKeyboardMarkup(zone_keyboard, one_time_keyboard=True, resize_keyboard=True)
+    await update.message.reply_text("Пожалуйста, ответьте 'да' или 'нет' на вопрос о зоне экологического неблагополучия.", reply_markup=reply_markup)
+    return ZONE
 
 async def locality(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"locality: user_id={update.effective_user.id if update.effective_user else None}, message={update.message.text if update.message else None}")
@@ -264,12 +359,13 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
         "education": context.user_data.get("education"),
         "category": context.user_data.get("category"),
         "experience_years": context.user_data.get("experience"),
-        "eco_zone": context.user_data.get("zone"),
+        # В расчёт передаём код зоны, если он есть, иначе то, что есть
+        "eco_zone": context.user_data.get("eco_zone_code") if "eco_zone_code" in context.user_data else context.user_data.get("zone"),
         "location": context.user_data.get("locality"),
         "facility": str(context.user_data.get("org_type", "")).strip().lower(),
-        "clinical_dept": dept,  # Явно передаём выбранный признак
-        "hazard_profile": context.user_data.get("hazard_dept"),
-        "hazard_value": context.user_data.get("hazard_value", 0),
+    "clinical_dept": dept,  # Явно передаём выбранный признак
+    "hazard_profile": context.user_data.get("hazard_profile_key", context.user_data.get("hazard_dept")),
+    "hazard_value": context.user_data.get("hazard_value", 0),
         "is_surgery": False,
         "is_uchastok": context.user_data.get("is_uchastok", False),
     }
@@ -305,26 +401,42 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
         if str(val).strip().lower() in ["нет", "false", "0"]:
             return "нет"
         return str(val)
+    category_map = {
+        1: "высшая",
+        2: "первая",
+        3: "вторая",
+        4: "без категории",
+    }
     summary_lines = []
     for k in param_names:
         v = context.user_data.get(k)
         if k == "is_surgery":
             v = surgery_ru(v)
+        if k == "category":
+            try:
+                if v is not None and str(v).isdigit():
+                    v = category_map.get(int(v), v)
+            except Exception:
+                pass
         summary_lines.append(f"{param_names[k]}: {v}")
     summary = "\n".join(summary_lines)
 
+    eco_label = context.user_data.get("zone")
+    eco_label_suffix = f" ({eco_label})" if eco_label and str(eco_label).strip().lower() != "нет" else ""
+    k4_label = allowances.get("k4_label")
+    k4_label_suffix = f" ({k4_label})" if k4_label else ""
     allowance_names = {
-        "k1": "Экологическая зона",
+        "k1": f"Экологическая зона{eco_label_suffix}",
         "k2": "Сельская местность",
         "k3": "Старшая медсестра",
-        "k4": "Вредные условия",
+        "k4": f"Вредные условия{k4_label_suffix}",
         "k5": "Психоэмоц напряжение",
         "special": "Особые условия труда",
     }
     role = context.user_data.get("specialty")
     # k5=0 если отделение неклиническое
     allowance_details = "\n".join([
-        f"{allowance_names.get(k, k)}: {0 if k == 'k5' and dept == 'неклиническое' else (round(v, 2) if k == 'special' else v)}"
+        f"{allowance_names.get(k, k)}: {0 if k == 'k5' and dept == 'неклиническое' else (round(v, 2) if k in ['special', 'k4'] else v)}"
         for k, v in allowances.items()
         if k in allowance_names and not (k == "k3" and role == "врач")
     ])
@@ -344,19 +456,21 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
         multipliers = f" ({' '.join(parts)})"
     if update.message:
         from datetime import datetime
-        await update.message.reply_text(
-            f"Спасибо! Ваши параметры:\n{summary}\n\n"
-            f"Должностной оклад: {base_oklad} KZT{multipliers}\n"
-            f"Надбавки:\n{allowance_details}\n"
-            f"\nРасчёт завершён!\nВаша зарплата: {total} KZT\n"
-            f"Это предварительная начисленная зарплата. Реальные расчеты могут быть меньше примерно на 20%: 10% обязательные пенсионные взносы и 10% подоходный налог."
-        )
+        from datetime import datetime
+        import pytz
+        almaty_tz = pytz.timezone('Asia/Almaty')
         import pytz
         almaty_tz = pytz.timezone('Asia/Almaty')
         now = datetime.now(almaty_tz)
         date_str = now.strftime('%d.%m.%Y')
         time_str = now.strftime('%H:%M')
-        await update.message.reply_text(f"Дата и время расчёта: {date_str}, {time_str} (Алматы)")
+        await update.message.reply_text(
+            f"Спасибо! Ваши параметры:\n{summary}\n\n"
+            f"Должностной оклад: {base_oklad} KZT{multipliers}\n"
+            f"Надбавки:\n{allowance_details}\n"
+            f"\nРасчёт завершён: {date_str} {time_str} (Алматы)\nВаша зарплата: {total} KZT\n"
+            f"Это предварительная начисленная зарплата. Реальные расчеты могут быть меньше примерно на 20%: 10% обязательные пенсионные взносы и 10% подоходный налог."
+        )
     return ConversationHandler.END
 
 async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -382,10 +496,12 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "education": context.user_data.get("education"),
         "category": context.user_data.get("category"),
         "experience_years": context.user_data.get("experience"),
-        "eco_zone": context.user_data.get("zone"),
+        # В расчёт передаём код зоны, если он есть, иначе то, что есть
+        "eco_zone": context.user_data.get("eco_zone_code") if "eco_zone_code" in context.user_data else context.user_data.get("zone"),
         "location": context.user_data.get("locality"),
-        "facility": str(context.user_data.get("org_type", "")).strip().lower(),
-        "hazard_profile": None,
+    "facility": str(context.user_data.get("org_type", "")).strip().lower(),
+    "hazard_profile": context.user_data.get("hazard_profile_key", context.user_data.get("hazard_dept")),
+    "hazard_value": context.user_data.get("hazard_value", 0),
         "is_surgery": context.user_data.get("is_surgery", False),
         "is_uchastok": context.user_data.get("is_uchastok", False),
     }
@@ -435,11 +551,15 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         summary_lines.append(f"{param_names[k]}: {v}")
     summary = "\n".join(summary_lines)
 
+    eco_label = context.user_data.get("zone")
+    eco_label_suffix = f" ({eco_label})" if eco_label and str(eco_label).strip().lower() != "нет" else ""
+    k4_label = allowances.get("k4_label")
+    k4_label_suffix = f" ({k4_label})" if k4_label else ""
     allowance_names = {
-        "k1": "Экологическая зона",
+        "k1": f"Экологическая зона{eco_label_suffix}",
         "k2": "Сельская местность",
         "k3": "Старшая медсестра",
-        "k4": "Вредные условия",
+        "k4": f"Вредные условия{k4_label_suffix}",
         "k5": "Психоэмоц напряжение",
         "special": "Особые условия труда",
     }
@@ -451,7 +571,7 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for k, v in allowances.items():
         if k == "k3" and role == "врач":
             continue
-        if k == "special":
+        if k == "special" or k == "k4":
             v = round(v, 2)
         allowance_details.append(f"{allowance_names.get(k, k)}: {v}")
     allowance_details = "\n".join(allowance_details)
@@ -470,11 +590,17 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parts.append(f"Role multiplier: {role_mult_val}")
         multipliers = f" ({' '.join(parts)})"
     if update.message:
+        from datetime import datetime
+        import pytz
+        almaty_tz = pytz.timezone('Asia/Almaty')
+        now = datetime.now(almaty_tz)
+        date_str = now.strftime('%d.%m.%Y')
+        time_str = now.strftime('%H:%M')
         await update.message.reply_text(
             f"Спасибо! Ваши параметры:\n{summary}\n\n"
             f"Должностной оклад: {base_oklad} KZT{multipliers}\n"
             f"Надбавки:\n{allowance_details}\n"
-            f"\nРасчёт завершён!\nВаша зарплата: {total} KZT\n"
+            f"\nРасчёт завершён: {date_str} {time_str} (Алматы)\nВаша зарплата: {total} KZT\n"
             f"Это предварительная начисленная зарплата. Реальные расчеты могут быть меньше примерно на 20%: 10% обязательные пенсионные взносы и 10% подоходный налог."
         )
     return ConversationHandler.END
@@ -486,6 +612,8 @@ state_handlers = [
     (EDUCATION, education),
     (EXPERIENCE, experience),
     (CATEGORY, category),
+    (HAZARD, hazard_handler),
+    (HAZARD_DEPT, hazard_dept_handler),
     (ZONE, zone),
     (LOCALITY, locality),
     (ORG_TYPE, org_type),

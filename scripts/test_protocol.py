@@ -36,13 +36,14 @@ answers = {
     "education": "среднее",
     "category": 2,  # первая категория
     "experience_years": 11,
-    "eco_zone": "нет",
+    "eco_zone": "radiation_max",  # максимум радиационного риска, как в боте
     "location": "город",
-    "facility": "поликлиника",
+    "facility": "стационар",
     "clinical_dept": "неклиническое",
-    "hazard_profile": None,
+    # Вредность: используем ключ 'xray' → должно быть 1.0 БДО из БД
+    "hazard_profile": "xray",
     "is_surgery": False,
-    "is_uchastok": True,
+    "is_uchastok": False,
 }
 
 print_stage("Исходные параметры", answers, {})
@@ -63,8 +64,8 @@ allowance_names = {
     "k1": "Экологическая зона",
     "k2": "Сельская местность",
     "k4": "Вредные условия",
-    "k4_label": "k4_label",
-    "k4_value": "k4_value",
+    "k4_label": "Вредность (метка)",
+    "k4_value": "Вредность (коэфф.)",
 }
 # Всегда выводим k1 (экологическая зона), даже если её нет или 0
 k1_val = allowances.get("k1", 0)
