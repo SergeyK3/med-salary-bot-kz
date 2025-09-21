@@ -1,10 +1,22 @@
 from pathlib import Path
 import pandas as pd
+import sqlite3
 
 ROOT = Path(__file__).resolve().parents[2]
 
+def read_risk_allowances(path: str | Path | None = None, table: str = "risk_allowances") -> pd.DataFrame:
+    if path is None:
+        path = ROOT / "data" / "risk_allowances.sqlite"
+    with sqlite3.connect(str(path)) as conn:
+        df = pd.read_sql(f"SELECT * FROM {table}", conn)
+    if "value" in df.columns:
+        df["value"] = pd.to_numeric(df["value"], errors="coerce")
+    return df
+
 def _read_robust(path: Path, expected_cols: set[str]) -> pd.DataFrame:
     # пробуем разные пары разделителей/десятичных
+    if path is None or expected_cols is None:
+        raise ValueError("path и expected_cols не должны быть None")
     for sep in (",", ";", "\t"):
         for dec in (".", ","):
             try:
@@ -19,7 +31,7 @@ def read_ets(path: str | Path | None = None, table: str = "ets_coefficients") ->
     import sqlite3
     if path is None:
         path = ROOT / "data" / "ets_coefficients.sqlite"
-    with sqlite3.connect(path) as conn:
+    with sqlite3.connect(str(path)) as conn:
         df = pd.read_sql(f"SELECT * FROM {table}", conn)
         for col in ["band_from", "band_to", "coeff"]:
             if col in df.columns:
@@ -36,7 +48,7 @@ def read_zones(path: str | Path | None = None, table: str = "zones") -> pd.DataF
     import sqlite3
     if path is None:
         path = ROOT / "data" / "zones.sqlite"
-    with sqlite3.connect(path) as conn:
+    with sqlite3.connect(str(path)) as conn:
         df = pd.read_sql(f"SELECT * FROM {table}", conn)
     if "value" in df.columns:
         df["value"] = pd.to_numeric(df["value"], errors="coerce")

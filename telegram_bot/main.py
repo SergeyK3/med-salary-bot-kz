@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 logger.info("Запуск Telegram-бота...")
 from dotenv import load_dotenv
 import os
+from datetime import datetime
 
 load_dotenv()
 TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -22,18 +23,28 @@ async def exit_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 SPECIALTY, EDUCATION, EXPERIENCE, CATEGORY, ZONE, LOCALITY, ORG_TYPE, CLINICAL_DEPT, UCHASTOK = range(9)
+SPECIALTY, EDUCATION, EXPERIENCE, CATEGORY, ZONE, LOCALITY, ORG_TYPE, CLINICAL_DEPT, UCHASTOK, HAZARD, HAZARD_DEPT = range(11)
 
 async def restart_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"restart_handler: user_id={update.effective_user.id if update.effective_user else None}, message={update.message.text if update.message else None}")
     if isinstance(context.user_data, dict):
         context.user_data.clear()
+    now = datetime.now()
+    date_str = now.strftime('%d.%m.%Y')
+    time_str = now.strftime('%H:%M')
+    greeting = (
+        "Здравствуйте, я бот по предварительному расчету заработной платы врачей и медсестер. "
+        "Нажмите кнопку старт и ответьте на вопросы. Если хотите прервать бота и начать новый диалог наберите «выход». "
+        "Для начала нового диалога или расчет наберите «старт»."
+    )
     keyboard = [["врач", "медсестра", "другое"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
     if update.message:
+        await update.message.reply_text(greeting)
         await update.message.reply_text(
-        "Выберите вашу должность:",
-        reply_markup=reply_markup
-    )
+            "Выберите вашу должность:",
+            reply_markup=reply_markup
+        )
     return SPECIALTY
 
 async def specialty(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -106,6 +117,50 @@ async def category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     import json
     with open("current_params.json", "w", encoding="utf-8") as f:
         json.dump(context.user_data, f, ensure_ascii=False, indent=2)
+    keyboard = [["да", "нет"]]
+    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+    await update.message.reply_text("Ваша специальность связана с вредностью?", reply_markup=reply_markup)
+    return HAZARD
+
+async def hazard_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"hazard_handler: user_id={update.effective_user.id if update.effective_user else None}, message={update.message.text if update.message else None}")
+    if not update.message:
+        return ConversationHandler.END
+    answer = str(update.message.text).strip().lower()
+    if context.user_data is None:
+        context.user_data = {}
+    context.user_data["hazard"] = answer
+    if answer == "да":
+        hazard_departments = [
+            "УЗИ", "рентген", "инфекционное отделение", "Анестезиология и реанимация", "баклаборатория", "КДЛ", "морг и патоморфология", "паллиатив", "трансфузиология", "физиотерапия", "цитологическая лаборатория", "эндоскопия"
+        ]
+        keyboard = [[d] for d in hazard_departments]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+        await update.message.reply_text("Выберите отделение с вредностью:", reply_markup=reply_markup)
+        return HAZARD_DEPT
+    else:
+        keyboard = [["да", "нет"]]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+        await update.message.reply_text("Ваша работа относится к зоне экологического неблагополучия?", reply_markup=reply_markup)
+        return ZONE
+
+async def hazard_dept_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"hazard_dept_handler: user_id={update.effective_user.id if update.effective_user else None}, message={update.message.text if update.message else None}")
+    if not update.message:
+        return ConversationHandler.END
+    dept = str(update.message.text).strip() if update.message and update.message.text else ""
+    if context.user_data is None:
+        context.user_data = {}
+    context.user_data["hazard_dept"] = dept
+    # Получить размер доплаты из risk_allowances.sqlite
+    from src.utils.data_io import read_risk_allowances
+    df = read_risk_allowances()
+    value = 0
+    if dept and df is not None and "department" in df.columns:
+        found = df[df["department"].str.lower() == dept.lower()]
+        if not found.empty and "value" in found.columns:
+            value = float(found.iloc[0]["value"])
+    context.user_data["hazard_value"] = value
     keyboard = [["да", "нет"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
     await update.message.reply_text("Ваша работа относится к зоне экологического неблагополучия?", reply_markup=reply_markup)
@@ -202,7 +257,8 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
         return UCHASTOK
     # Неклиническое — сразу к расчёту, без вопроса о хирургии
     context.user_data["is_surgery"] = False
-    # Передаём признак отделения в answers
+
+    # Передаём признаки в answers
     answers = {
         "role": str(context.user_data.get("specialty", "")).strip().lower(),
         "education": context.user_data.get("education"),
@@ -212,7 +268,8 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
         "location": context.user_data.get("locality"),
         "facility": str(context.user_data.get("org_type", "")).strip().lower(),
         "clinical_dept": dept,  # Явно передаём выбранный признак
-        "hazard_profile": None,
+        "hazard_profile": context.user_data.get("hazard_dept"),
+        "hazard_value": context.user_data.get("hazard_value", 0),
         "is_surgery": False,
         "is_uchastok": context.user_data.get("is_uchastok", False),
     }
@@ -286,6 +343,7 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
             parts.append(f"Role multiplier: {role_mult_val}")
         multipliers = f" ({' '.join(parts)})"
     if update.message:
+        from datetime import datetime
         await update.message.reply_text(
             f"Спасибо! Ваши параметры:\n{summary}\n\n"
             f"Должностной оклад: {base_oklad} KZT{multipliers}\n"
@@ -293,6 +351,12 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
             f"\nРасчёт завершён!\nВаша зарплата: {total} KZT\n"
             f"Это предварительная начисленная зарплата. Реальные расчеты могут быть меньше примерно на 20%: 10% обязательные пенсионные взносы и 10% подоходный налог."
         )
+        import pytz
+        almaty_tz = pytz.timezone('Asia/Almaty')
+        now = datetime.now(almaty_tz)
+        date_str = now.strftime('%d.%m.%Y')
+        time_str = now.strftime('%H:%M')
+        await update.message.reply_text(f"Дата и время расчёта: {date_str}, {time_str} (Алматы)")
     return ConversationHandler.END
 
 async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):

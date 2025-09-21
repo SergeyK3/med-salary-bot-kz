@@ -1,9 +1,10 @@
 {
   "specialty": "медсестра",
-  "education": "среднее",
-  "experience": "11",
-  "category": 2,
+  "education": "высшее",
+  "experience": "15",
+  "category": 1,
   "zone": "нет",
   "locality": "город",
-  "org_type": "поликлиника"
+  "org_type": "стационар",
+  "clinical_dept": "клиническое"
 }

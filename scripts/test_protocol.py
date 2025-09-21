@@ -2,7 +2,12 @@ import sys
 from src.calc.totals import calc_total
 
 def print_stage(stage, inputs, outputs):
+    from datetime import datetime
+    now = datetime.now()
+    date_str = now.strftime('%d.%m.%Y')
+    time_str = now.strftime('%H:%M')
     print(f"\n=== {stage} ===")
+    print(f"Сегодня {date_str}, время {time_str}")
     print("Входные данные:")
     category_map = {
         1: "высшая",
@@ -44,7 +49,13 @@ print_stage("Исходные параметры", answers, {})
 
 result = calc_total(answers)
 
-
+from datetime import datetime
+import pytz
+almaty_tz = pytz.timezone('Asia/Almaty')
+now = datetime.now(almaty_tz)
+date_str = now.strftime('%d.%m.%Y')
+time_str = now.strftime('%H:%M')
+print(f"\nСегодня {date_str}, время {time_str} (Алматы)")
 print(f"\nДолжностной оклад: {result['base_oklad']} KZT (ETS coeff: {result['ets_coeff']} Role multiplier: 2.34)")
 
 allowances = result["allowances"]
@@ -55,7 +66,10 @@ allowance_names = {
     "k4_label": "k4_label",
     "k4_value": "k4_value",
 }
-for k in ["k1", "k2", "k4", "k4_label", "k4_value"]:
+# Всегда выводим k1 (экологическая зона), даже если её нет или 0
+k1_val = allowances.get("k1", 0)
+print(f"{allowance_names['k1']}: {k1_val}")
+for k in ["k2", "k4", "k4_label", "k4_value"]:
     if k in allowances:
         print(f"{allowance_names.get(k, k)}: {allowances[k]}")
 print(f"Психоэмоц напряжение: {allowances.get('k5', 0.0)}")
