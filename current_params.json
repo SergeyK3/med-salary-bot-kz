@@ -1,0 +1,12 @@
+{
+  "specialty": "врач",
+  "education": "высшее",
+  "experience": "11",
+  "category": 2,
+  "hazard": "нет",
+  "zone": "экол. катастрофы",
+  "eco_zone_code": "eco_catastrophe",
+  "locality": "город",
+  "org_type": "стационар",
+  "clinical_dept": "клиническое"
+}
