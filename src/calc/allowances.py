@@ -110,9 +110,29 @@ def calc_k1(eco_code: Optional[str], job_oklad: float, _settings: Optional[dict]
 def calc_k2(location: str, job_oklad: float, _settings: Optional[dict] = None) -> float:
     return k2_amount(location, job_oklad)
 def calc_k5(role, facility, is_surgery, is_uchastok, bdo):
-    if role == "врач" and facility == "стационар" and is_surgery and not is_uchastok:
-        return round(1.5 * bdo, 2)
-    return 0.0
+    """Психоэмоциональная нагрузка (k5) — от БДО.
+
+    Политика:
+    - Стационар: использовать настройки k5_inpatient
+        * врач: хирургия 1.5, терапия 0.8
+        * сестра: хирургия 0.8, терапия 0.4
+    - Поликлиника участковые: использовать настройки k6_district (перенесено в k5)
+        * врач: 2.0
+        * сестра: 1.5
+    """
+    try:
+        role_k = _role_key(role)
+        if facility == "стационар":
+            kind = "хирургия" if bool(is_surgery) else "терапия"
+            mult = float(S["k5_inpatient"][role_k][kind])
+            return round(mult * float(bdo), 2)
+        # поликлиника и участковый → начислять в k5 по k6_district
+        if facility == "поликлиника" and bool(is_uchastok):
+            mult = float(S["k6_district"][role_k])
+            return round(mult * float(bdo), 2)
+        return 0.0
+    except Exception:
+        return 0.0
 def calc_k6(is_uchastok: bool, role: str, _settings: Optional[dict] = None) -> float:
     return k6_amount(is_uchastok, role)
 def special_conditions(job_oklad: float, _settings: Optional[dict] = None) -> float:
