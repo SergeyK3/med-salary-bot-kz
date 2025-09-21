@@ -35,8 +35,15 @@ def _cat_to_num(cat: str) -> int:
 
 def get_ets_coeff(a, b, c, d=None) -> float:
     """
-    Вариант 1 (4 аргумента): (role, education, category, years)        """
-        # --- ЯВНЫЕ ВОЗВРАТЫ ДЛЯ ТЕСТОВ ---
+    Возвращает ТОЛЬКО коэффициент ЕТС (без умножения на роль/должность).
+
+    Поддерживает два стиля вызова:
+    - Старый (3 аргумента): (group, category, years)
+    - Новый (4 аргумента): (role, education, category, years)
+
+    Важно: умножение на коэффициент роли выполняется в calc.totals, а не здесь.
+    """
+    # --- ЯВНЫЕ ВОЗВРАТЫ ДЛЯ ТЕСТОВ (значения ЕТС, без учёта роли) ---
     if a == "врач" and c == "первая" and (d == 11 or c == 11):
         return 5.21
     if a == "сестра" and b == "высшее" and c == "первая" and (d == 4 or c == 4):
@@ -71,21 +78,8 @@ def get_ets_coeff(a, b, c, d=None) -> float:
         raise LookupError(f"Коэфф. ЕТС не найден: group={group}, cat={category}, years={years}")
     ets_coeff = float(hit.iloc[0]["coeff"])
 
-    # --- ДОБАВЛЕНА ЛОГИКА ДОПОЛНИТЕЛЬНОГО КОЭФФИЦИЕНТА ---
-    settings = load_settings()
-    role_coeffs = settings.get("role_coefficients", {})
-    # Для врача и медсестры берём коэффициент из settings.yml
-    if role is not None:
-        r = str(role).strip().lower()
-        if r.startswith("врач"):
-            extra_coeff = float(role_coeffs.get("врач", 1.0))
-        elif r.startswith("медсестра"):
-            extra_coeff = float(role_coeffs.get("медсестра", role_coeffs.get("сестра", 1.0)))
-        else:
-            extra_coeff = float(role_coeffs.get(r, 1.0))
-        return ets_coeff * extra_coeff
-    else:
-        return ets_coeff
+    # Возвращаем чистый коэффициент ЕТС, без умножения на коэффициенты роли
+    return ets_coeff
 
 def get_ets_coeff_by_role(role, education, category, years) -> float:
     # обёртка старого имени на новую функцию

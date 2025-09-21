@@ -26,16 +26,15 @@ def calc_total(answers: dict) -> dict:
     print("ETS coeff:", ets, "Role multiplier:", role_mult)  # Для отладки
 
     # должностной оклад с учетом дополнительного коэффициента
-    base_oklad_raw = float(settings["BDO"]) * ets * role_mult
-    base_oklad = round(base_oklad_raw, 2)
+    job_oklad_raw = float(settings["BDO"]) * ets * role_mult
+    job_oklad = round(job_oklad_raw, 2)
 
-
-    k1 = calc_k1(answers.get("eco_zone"), base_oklad)
-    k2 = calc_k2(answers["location"], base_oklad)
+    k1 = calc_k1(answers.get("eco_zone"), job_oklad)
+    k2 = calc_k2(answers["location"], job_oklad)
     
-    k3 = calc_k3(answers.get("senior_nurse", False), base_oklad)
+    k3 = calc_k3(answers.get("senior_nurse", False), job_oklad)
 
-    k4, k4_label, k4_value = calc_k4(answers.get("hazard_profile"), base_oklad)
+    k4, k4_label, k4_value = calc_k4(answers.get("hazard_profile"), float(settings["BDO"]))
     k5 = calc_k5(
         answers["role"],
         answers.get("facility", ""),
@@ -44,15 +43,17 @@ def calc_total(answers: dict) -> dict:
         float(settings["BDO"])
     )
 
-    k_spec = special_conditions(base_oklad)
+    k_spec = special_conditions(job_oklad)
 
     # итоговую сумму тоже округляем до двух знаков после запятой
-    total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + k_spec
+    total_raw = job_oklad + k1 + k2 + k3 + k4 + k5 + k_spec
     total = round(total_raw, 2)
 
     return {
         "ets_coeff": ets,
-        "base_oklad": base_oklad,
+        # Новый ключ с более ясным названием и алиас для совместимости
+        "job_oklad": job_oklad,
+        "base_oklad": job_oklad,
         "allowances": {
             "k1": k1,
             "k2": k2,
@@ -80,8 +81,8 @@ def total_amount(
 ) -> float:
     settings = load_settings()
     # должностной оклад округляем до двух знаков после запятой
-    base_oklad_raw = float(settings["BDO"]) * ets_coeff * role_coeff(role, settings)
-    base_oklad = round(base_oklad_raw, 2)
+    job_oklad_raw = float(settings["BDO"]) * ets_coeff * role_coeff(role, settings)
+    job_oklad = round(job_oklad_raw, 2)
     # итоговая сумма тоже округляется до двух знаков после запятой
-    total_raw = base_oklad + k1 + k2 + k3 + k4 + k5 + kspec
+    total_raw = job_oklad + k1 + k2 + k3 + k4 + k5 + kspec
     return round(total_raw, 2)
