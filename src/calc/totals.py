@@ -2,14 +2,15 @@
 from src.config import load_settings
 from src.calc.base_oklad import get_ets_coeff
 from src.calc.allowances import (
-    calc_k1, calc_k2, calc_k3, calc_k4, calc_k5, calc_senior_nurse, special_conditions
+    calc_k1, calc_k2, calc_k3, calc_k4, calc_k5, calc_k6, calc_senior_nurse, special_conditions
 )
 
 def role_coeff(role: str, settings: dict) -> float:
     r = role.strip().lower()
     if r.startswith("врач"):
         return float(settings["role_coefficients"]["врач"])
-    if r.startswith("сест"):
+    # распознаём медсестру по подстроке, чтобы охватить 'медсестра', 'старшая медсестра' и т.п.
+    if "сест" in r:
         return float(settings["role_coefficients"]["сестра"])
     return float(settings["role_coefficients"]["младший"])
 
@@ -43,10 +44,13 @@ def calc_total(answers: dict) -> dict:
         float(settings["BDO"])
     )
 
+    # k6 перенесён в k5 для участковых (чтобы не дублировать начисление)
+    k6 = 0.0
+
     k_spec = special_conditions(job_oklad)
 
     # итоговую сумму тоже округляем до двух знаков после запятой
-    total_raw = job_oklad + k1 + k2 + k3 + k4 + k5 + k_spec
+    total_raw = job_oklad + k1 + k2 + k3 + k4 + k5 + k6 + k_spec
     total = round(total_raw, 2)
 
     return {
@@ -61,7 +65,8 @@ def calc_total(answers: dict) -> dict:
             "k4": k4,
             "k4_label": k4_label,
             "k4_value": k4_value,
-            "k5": k5,            
+            "k5": k5,
+            "k6": k6,
             "special": k_spec,
         },
         "total_salary": total,

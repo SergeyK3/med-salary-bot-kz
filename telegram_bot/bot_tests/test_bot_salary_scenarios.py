@@ -48,6 +48,6 @@ scenarios = [
 for scenario in scenarios:
     print(f"\n--- {scenario['name']} ---")
     result = calc_total(scenario)
-    print("Базовый оклад:", result["base_oklad"])
+    print("Должностной оклад:", result["base_oklad"])
     print("Надбавки:", {k: round(v,2) for k,v in result["allowances"].items() if isinstance(v, (int, float))})
     print("Итоговая сумма:", result["total_salary"])

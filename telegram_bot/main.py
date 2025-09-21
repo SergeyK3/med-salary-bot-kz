@@ -14,7 +14,8 @@ from telegram.ext import (
     Application, CommandHandler, MessageHandler, ConversationHandler, ContextTypes, filters
 )
 
-from src.calc.totals import calc_total
+from src.calc.totals import calc_total, role_coeff
+from src.config import load_settings
 
 async def exit_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"exit_handler: user_id={update.effective_user.id if update.effective_user else None}, message={update.message.text if update.message else None}")
@@ -22,7 +23,6 @@ async def exit_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Диалог завершён. Для нового расчёта отправьте /start или 'старт'.")
     return ConversationHandler.END
 
-SPECIALTY, EDUCATION, EXPERIENCE, CATEGORY, ZONE, LOCALITY, ORG_TYPE, CLINICAL_DEPT, UCHASTOK = range(9)
 SPECIALTY, EDUCATION, EXPERIENCE, CATEGORY, ZONE, LOCALITY, ORG_TYPE, CLINICAL_DEPT, UCHASTOK, HAZARD, HAZARD_DEPT = range(11)
 
 async def restart_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -159,7 +159,7 @@ async def hazard_dept_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         df.columns = df.columns.str.strip().str.lower()
         dept_norm = (dept or "").strip().lower()
         found_row = None
-        # Пытаемся сопоставить по department, затем по label
+        # 1) Точное совпадение по department, затем по label
         if "department" in df.columns:
             found = df[df["department"].astype(str).str.strip().str.lower() == dept_norm]
             if not found.empty:
@@ -168,6 +168,33 @@ async def hazard_dept_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             found = df[df["label"].astype(str).str.strip().str.lower() == dept_norm]
             if not found.empty:
                 found_row = found.iloc[0]
+        # 2) Если не нашли — ищем по подстроке (например, 'кдл')
+        if found_row is None:
+            for col in ("department", "label"):
+                if col in df.columns:
+                    sub = df[df[col].astype(str).str.strip().str.lower().str.contains(dept_norm, na=False)]
+                    if not sub.empty:
+                        found_row = sub.iloc[0]
+                        break
+        # 3) Синонимы для частых аббревиатур
+        if found_row is None:
+            synonyms = {
+                "кдл": ["клинико-диагностическая лаборатория", "клиникодиагностическая лаборатория", "кдл"],
+                "узи": ["узи", "ультразвуковая диагностика"],
+            }
+            for key, variants in synonyms.items():
+                if key in dept_norm:
+                    for v in variants:
+                        for col in ("department", "label"):
+                            if col in df.columns:
+                                sub = df[df[col].astype(str).str.strip().str.lower().str.contains(v, na=False)]
+                                if not sub.empty:
+                                    found_row = sub.iloc[0]
+                                    break
+                        if found_row is not None:
+                            break
+                if found_row is not None:
+                    break
         if found_row is not None:
             key = str(found_row.get("key")) if "key" in df.columns else None
             label = str(found_row.get("label")) if "label" in df.columns else None
@@ -401,6 +428,17 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
         if str(val).strip().lower() in ["нет", "false", "0"]:
             return "нет"
         return str(val)
+    def yesno(val):
+        if val is None:
+            return "нет"
+        if isinstance(val, bool):
+            return "да" if val else "нет"
+        s = str(val).strip().lower()
+        if s in ["да", "true", "1"]:
+            return "да"
+        if s in ["нет", "false", "0"]:
+            return "нет"
+        return s
     category_map = {
         1: "высшая",
         2: "первая",
@@ -412,6 +450,8 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
         v = context.user_data.get(k)
         if k == "is_surgery":
             v = surgery_ru(v)
+        if k == "is_uchastok":
+            v = yesno(v)
         if k == "category":
             try:
                 if v is not None and str(v).isdigit():
@@ -428,25 +468,29 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
     allowance_names = {
         "k1": f"Экологическая зона{eco_label_suffix}",
         "k2": "Сельская местность",
-        "k3": "Старшая медсестра",
+        # k3 скрыт из отображения
         "k4": f"Вредные условия{k4_label_suffix}",
         "k5": "Психоэмоц напряжение",
         "special": "Особые условия труда",
     }
     role = context.user_data.get("specialty")
     # k5=0 если отделение неклиническое
+    def _fmt_allowance(k, v):
+        if k == 'k5' and dept == 'неклиническое':
+            return 0
+        return round(v, 2) if isinstance(v, (int, float)) else v
     allowance_details = "\n".join([
-        f"{allowance_names.get(k, k)}: {0 if k == 'k5' and dept == 'неклиническое' else (round(v, 2) if k in ['special', 'k4'] else v)}"
+        f"{allowance_names.get(k, k)}: {_fmt_allowance(k, v)}"
         for k, v in allowances.items()
-        if k in allowance_names and not (k == "k3" and role == "врач")
+        if k in allowance_names and k != "k3"
     ])
 
     multipliers = ""
-    role_mult_val = None
-    if context.user_data.get("specialty") == "врач":
-        role_mult_val = 3.42
-    elif context.user_data.get("specialty") == "медсестра":
-        role_mult_val = 2.34
+    try:
+        settings = load_settings()
+        role_mult_val = role_coeff(context.user_data.get("specialty", ""), settings)
+    except Exception:
+        role_mult_val = None
     if ets_coeff is not None or role_mult_val is not None:
         parts = []
         if ets_coeff is not None:
@@ -456,9 +500,6 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
         multipliers = f" ({' '.join(parts)})"
     if update.message:
         from datetime import datetime
-        from datetime import datetime
-        import pytz
-        almaty_tz = pytz.timezone('Asia/Almaty')
         import pytz
         almaty_tz = pytz.timezone('Asia/Almaty')
         now = datetime.now(almaty_tz)
@@ -530,18 +571,34 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         4: "без категории"
     }
     def surgery_ru(val):
+        if val is None:
+            return "нет"
         if isinstance(val, bool):
-            return "Да" if val else "Нет"
-        if val in [True, "Да"]:
-            return "Да"
-        if val in [False, "Нет"]:
-            return "Нет"
-        return val
+            return "да" if val else "нет"
+        s = str(val).strip().lower()
+        if s in ["да", "true", "1"]:
+            return "да"
+        if s in ["нет", "false", "0"]:
+            return "нет"
+        return s
+    def yesno(val):
+        if val is None:
+            return "нет"
+        if isinstance(val, bool):
+            return "да" if val else "нет"
+        s = str(val).strip().lower()
+        if s in ["да", "true", "1"]:
+            return "да"
+        if s in ["нет", "false", "0"]:
+            return "нет"
+        return s
     summary_lines = []
     for k in param_names:
         v = context.user_data.get(k)
         if k == "is_surgery":
             v = surgery_ru(v)
+        if k == "is_uchastok":
+            v = yesno(v)
         if k == "category":
             try:
                 if v is not None and str(v).isdigit():
@@ -558,7 +615,7 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     allowance_names = {
         "k1": f"Экологическая зона{eco_label_suffix}",
         "k2": "Сельская местность",
-        "k3": "Старшая медсестра",
+        # k3 скрыт из отображения
         "k4": f"Вредные условия{k4_label_suffix}",
         "k5": "Психоэмоц напряжение",
         "special": "Особые условия труда",
@@ -567,21 +624,20 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     org_type = context.user_data.get("org_type")
     is_uchastok = context.user_data.get("is_uchastok", False)
     # k5 для участковой медсестры поликлиники = 150% БДО
-    allowance_details = []
-    for k, v in allowances.items():
-        if k == "k3" and role == "врач":
-            continue
-        if k == "special" or k == "k4":
-            v = round(v, 2)
-        allowance_details.append(f"{allowance_names.get(k, k)}: {v}")
-    allowance_details = "\n".join(allowance_details)
+    def _fmt_allowance2(k, v):
+        return round(v, 2) if isinstance(v, (int, float)) else v
+    allowance_details = "\n".join([
+        f"{allowance_names.get(k, k)}: {_fmt_allowance2(k, v)}"
+        for k, v in allowances.items()
+        if k in allowance_names and k != "k3"
+    ])
 
     multipliers = ""
-    role_mult_val = None
-    if context.user_data.get("specialty") == "врач":
-        role_mult_val = 3.42
-    elif context.user_data.get("specialty") == "медсестра":
-        role_mult_val = 2.34
+    try:
+        settings = load_settings()
+        role_mult_val = role_coeff(context.user_data.get("specialty", ""), settings)
+    except Exception:
+        role_mult_val = None
     if ets_coeff is not None or role_mult_val is not None:
         parts = []
         if ets_coeff is not None:
@@ -645,10 +701,14 @@ conv_handler = ConversationHandler(
     ],
 )
 
-if not TOKEN:
-    print("Ошибка: TELEGRAM_TOKEN не задан в переменных окружения.")
-    exit(1)
+if __name__ == "__main__":
+    def _run_bot():
+        if not TOKEN:
+            print("Ошибка: TELEGRAM_TOKEN не задан в переменных окружения.")
+            return
+        app = Application.builder().token(str(TOKEN)).build()
+        app.add_handler(conv_handler)
+        app.run_polling(drop_pending_updates=True)
 
-app = Application.builder().token(str(TOKEN)).build()
-app.add_handler(conv_handler)
-app.run_polling(drop_pending_updates=True)
+    if __name__ == "__main__":
+        _run_bot()
