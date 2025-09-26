@@ -24,6 +24,9 @@ python -m src.api
 - `data/settings.yml` — базовые параметры (БДО, МРП, коэффициенты)
 
 ## Документация
+- [docs/architecture.md](docs/architecture.md) — архитектура проекта, диаграммы структуры папок и компонентов
+- [docs/file-structure.md](docs/file-structure.md) — детальное описание назначения каждой папки и файла
+- [docs/developer-guide.md](docs/developer-guide.md) — руководство разработчика, принципы архитектуры и лучшие практики
 - [docs/calc-model.md](docs/calc-model.md) — формулы и примеры расчёта
 - [docs/dialogs.md](docs/dialogs.md) — сценарии диалогов бота
 - [docs/TZ.md](docs/TZ.md) — техническое задание
