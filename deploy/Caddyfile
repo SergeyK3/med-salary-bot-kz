@@ -1,6 +1,5 @@
 kimserg.store {
   encode gzip
-  reverse_proxy api:8000
   log {
     output stdout
     format console

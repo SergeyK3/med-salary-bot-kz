@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+  bot:
+    build:
+      context: ./telegram_bot
+    container_name: med_salary_bot
+    restart: unless-stopped
+    env_file:
+      - ./telegram_bot/.env
+    # Укажите правильный порт, на котором стартует ваш бот
+    expose:
+      - "8000"
+    # Если бот использует другой порт (например, 5000/8080), замените "8000" на нужный
+    # command: ["python", "main.py"]  # если нужен кастомный запуск
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,3 @@
+kimserg.store {
+    reverse_proxy telegram_bot:8000
+}
