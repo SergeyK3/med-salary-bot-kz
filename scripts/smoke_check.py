@@ -12,7 +12,7 @@ assert round(get_ets_coeff("сестра", "среднее", "нет", 8.5), 2) 
 answers = {
   "role": "врач", "education": None, "experience_years": 11, "category": "первая",
   "eco_zone": "eco_crisis", "location": "село", "facility": "стационар",
-  "is_head": False, "hazard_profile": "xray", "is_surgery": True, "is_district": False
+  "senior_nurse": False, "hazard_profile": "xray", "is_surgery": True, "is_uchastok": False
 }
 result = calc_salary(answers)
 print(json.dumps(result, ensure_ascii=False, indent=2))

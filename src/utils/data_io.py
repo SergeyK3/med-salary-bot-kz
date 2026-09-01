@@ -15,14 +15,29 @@ def _read_robust(path: Path, expected_cols: set[str]) -> pd.DataFrame:
                 continue
     raise ValueError(f"Не удалось прочитать {path} с ожидаемыми колонками {expected_cols}")
 
-def read_ets(path: str | Path | None = None) -> pd.DataFrame:
+def read_ets(path: str | Path | None = None, table: str = "ets_coefficients") -> pd.DataFrame:
+    import sqlite3
     if path is None:
-        path = ROOT / "data" / "ets_coefficients.csv"
-    cols = {"group", "category", "band_label", "band_from", "band_to", "coeff"}
-    return _read_robust(Path(path), cols)
+        path = ROOT / "data" / "ets_coefficients.sqlite"
+    with sqlite3.connect(path) as conn:
+        df = pd.read_sql(f"SELECT * FROM {table}", conn)
+        for col in ["band_from", "band_to", "coeff"]:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+        # Привести category к int для корректной фильтрации
+        if "category" in df.columns:
+            df["category"] = pd.to_numeric(df["category"], errors="coerce", downcast="integer")
+        # Очистить band_label от пробелов
+        if "band_label" in df.columns:
+            df["band_label"] = df["band_label"].astype(str).str.strip()
+        return df
 
-def read_zones(path: str | Path | None = None) -> pd.DataFrame:
+def read_zones(path: str | Path | None = None, table: str = "zones") -> pd.DataFrame:
+    import sqlite3
     if path is None:
-        path = ROOT / "data" / "zones.csv"
-    cols = {"code", "name", "calc_base", "value", "notes"}
-    return _read_robust(Path(path), cols)
+        path = ROOT / "data" / "zones.sqlite"
+    with sqlite3.connect(path) as conn:
+        df = pd.read_sql(f"SELECT * FROM {table}", conn)
+    if "value" in df.columns:
+        df["value"] = pd.to_numeric(df["value"], errors="coerce")
+    return df

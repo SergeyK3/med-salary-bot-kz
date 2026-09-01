@@ -1,0 +1,45 @@
+[Unit]
+Description=med-salary-bot-kz Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=medsalarybot
+Group=medsalarybot
+WorkingDirectory=/opt/projects/med-salary-bot-kz
+EnvironmentFile=/etc/med-salary-bot/bot.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=CURRENT_PARAMS_PATH=/run/med-salary-bot/current_params.json
+ExecStart=/opt/projects/med-salary-bot-kz/.venv/bin/python -m telegram_bot.main
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+KillSignal=SIGINT
+
+# Writable runtime state is kept outside the read-only source tree.
+RuntimeDirectory=med-salary-bot
+RuntimeDirectoryMode=0700
+UMask=0077
+
+# Hardening compatible with Python and outbound Telegram HTTPS polling.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/med-salary-bot
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

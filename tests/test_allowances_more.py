@@ -3,22 +3,54 @@ from src.utils.data_loader import load_settings
 
 def test_k1_eco_catastrophe_uses_bdo():
     S = load_settings()
-    assert k1_amount("eco_catastrophe") == float(S["BDO"]) * 0.5
+    assert k1_amount("eco_catastrophe", float(S["BDO"])) == float(S["BDO"]) * 0.5
 
 def test_k4_xray_from_bdo():
     S = load_settings()
-    assert k4_amount("xray") == float(S["BDO"]) * 1.0  # рентген = 1.0 ДО
+    # Ожидаем кортеж: (сумма, метка, коэффициент)
+    expected = (float(S["BDO"]) * 1.0, 'Рентген', 1.0)
+    assert k4_amount("xray", float(S["BDO"])) == expected
 
 def test_k5_inpatient_surgery_doctor():
     S = load_settings()
-    # стационар + хирургия → врач 1.5 БДО
-    assert k5_amount("стационар", "врач", True) == float(S["BDO"]) * 1.5
+    # Врач, стационар, хирургия → 1.5 БДО
+    assert k5_amount("стационар", "врач", True, False, float(S["BDO"])) == float(S["BDO"]) * 1.5
 
-def test_k6_district_nurse():
+def test_k5_inpatient_non_surgery_doctor():
     S = load_settings()
-    # участковая сестра 1.5 БДО
-    assert k6_amount(True, "сестра") == float(S["BDO"]) * 1.5
+    # Врач, стационар, не хирургия → 0.8 БДО
+    assert k5_amount("стационар", "врач", False, False, float(S["BDO"])) == float(S["BDO"]) * 0.8
+
+def test_k5_outpatient_district_doctor():
+    S = load_settings()
+    # Врач, не стационар, участковый → 2.0 БДО
+    assert k5_amount("поликлиника", "врач", False, True, float(S["BDO"])) == float(S["BDO"]) * 2.0
+
+def test_k5_outpatient_non_district_doctor():
+    S = load_settings()
+    # Врач, не стационар, не участковый → 0 БДО
+    assert k5_amount("поликлиника", "врач", False, False, float(S["BDO"])) == 0.0
+
+def test_k5_inpatient_surgery_nurse():
+    S = load_settings()
+    # Медсестра, стационар, хирургия → 0.8 БДО
+    assert k5_amount("стационар", "сестра", True, False, float(S["BDO"])) == float(S["BDO"]) * 0.8
+
+def test_k5_inpatient_non_surgery_nurse():
+    S = load_settings()
+    # Медсестра, стационар, не хирургия → 0.4 БДО
+    assert k5_amount("стационар", "сестра", False, False, float(S["BDO"])) == float(S["BDO"]) * 0.4
+
+def test_k5_outpatient_district_nurse():
+    S = load_settings()
+    # Медсестра, не стационар, участковая → 1.5 БДО
+    assert k5_amount("поликлиника", "сестра", False, True, float(S["BDO"])) == float(S["BDO"]) * 1.5
+
+def test_k5_outpatient_non_district_nurse():
+    S = load_settings()
+    # Медсестра, не стационар, не участковая → 0 БДО
+    assert k5_amount("поликлиника", "сестра", False, False, float(S["BDO"])) == 0.0
 
 def test_special_amount_is_0_1_bdo():
     S = load_settings()
-    assert special_amount() == float(S["BDO"]) * 0.1
+    assert special_amount(float(S["BDO"])) == float(S["BDO"]) * 0.1
