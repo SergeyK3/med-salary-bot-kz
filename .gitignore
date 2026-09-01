@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
 
 # pytest
 .pytest_cache/
@@ -17,6 +18,16 @@ htmlcov/
 .venv/
 venv/
 env/
+
+# Local secrets (examples are safe to track)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Runtime files
+current_params.json
+log.txt
 
 # Jupyter
 .ipynb_checkpoints

@@ -1,13 +1,25 @@
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+# httpx logs full Telegram Bot API request URLs at INFO level. Those URLs
+# contain the bot token. Keep Telegram/application errors, but suppress
+# request-level URL logging from the HTTP client.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 logger.info("Запуск Telegram-бота...")
 from dotenv import load_dotenv
 import os
 from datetime import datetime
+from pathlib import Path
 
 load_dotenv()
 TOKEN = os.getenv("TELEGRAM_TOKEN")
+CURRENT_PARAMS_PATH = Path(os.getenv("CURRENT_PARAMS_PATH", "current_params.json"))
+
+def _writable_current_params_path() -> Path:
+    """Create the runtime parent directory and return the snapshot path."""
+    CURRENT_PARAMS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    return CURRENT_PARAMS_PATH
 
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import (
@@ -55,7 +67,7 @@ async def specialty(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data = {}
     context.user_data["specialty"] = str(update.message.text).strip().lower()
     import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
+    with open(_writable_current_params_path(), "w", encoding="utf-8") as f:
         json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     if update.message and update.message.text and update.message.text.strip().lower() == "медсестра":
         keyboard = [["высшее", "среднее"]]
@@ -79,7 +91,7 @@ async def education(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if context.user_data is not None:
             context.user_data["education"] = "—"
     import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
+    with open(_writable_current_params_path(), "w", encoding="utf-8") as f:
         json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     if update.message:
         await update.message.reply_text("Введите ваш опыт работы (лет):")
@@ -93,7 +105,7 @@ async def experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data = {}
     context.user_data["experience"] = update.message.text
     import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
+    with open(_writable_current_params_path(), "w", encoding="utf-8") as f:
         json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     keyboard = [["высшая", "первая"], ["вторая", "нет категории"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -115,7 +127,7 @@ async def category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     context.user_data["category"] = cat_map.get(cat_text, cat_text)
     import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
+    with open(_writable_current_params_path(), "w", encoding="utf-8") as f:
         json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     keyboard = [["да", "нет"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -290,7 +302,7 @@ async def zone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Пользователь ответил «нет» на общий вопрос
         context.user_data["zone"] = "нет"  # для отображения
         context.user_data["eco_zone_code"] = None  # для расчёта
-        with open("current_params.json", "w", encoding="utf-8") as f:
+        with open(_writable_current_params_path(), "w", encoding="utf-8") as f:
             json.dump(context.user_data, f, ensure_ascii=False, indent=2)
         keyboard = [["город", "село"]]
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -301,7 +313,7 @@ async def zone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # сохраняем как исходный вид, чтобы красиво выводить
         context.user_data["zone"] = raw_text
         context.user_data["eco_zone_code"] = ru_to_code[text]
-        with open("current_params.json", "w", encoding="utf-8") as f:
+        with open(_writable_current_params_path(), "w", encoding="utf-8") as f:
             json.dump(context.user_data, f, ensure_ascii=False, indent=2)
         keyboard = [["город", "село"]]
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -323,7 +335,7 @@ async def locality(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data = {}
     context.user_data["locality"] = str(update.message.text).strip().lower()
     import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
+    with open(_writable_current_params_path(), "w", encoding="utf-8") as f:
         json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     keyboard = [["стационар", "поликлиника"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -346,7 +358,7 @@ async def org_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["org_type"] = org_type_value
     import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
+    with open(_writable_current_params_path(), "w", encoding="utf-8") as f:
         json.dump(context.user_data, f, ensure_ascii=False, indent=2)
 
     if org_type_value == "стационар":
@@ -370,7 +382,7 @@ async def clinical_dept_handler(update: Update, context: ContextTypes.DEFAULT_TY
     dept = str(dept_text).strip().lower()
     context.user_data["clinical_dept"] = dept
     import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
+    with open(_writable_current_params_path(), "w", encoding="utf-8") as f:
         json.dump(context.user_data, f, ensure_ascii=False, indent=2)
     if dept == "клиническое":
         keyboard = [["да", "нет"]]
@@ -522,7 +534,7 @@ async def uchastok_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data = {}
     text = str(update.message.text).strip().lower() if update.message and update.message.text else ""
     import json
-    with open("current_params.json", "w", encoding="utf-8") as f:
+    with open(_writable_current_params_path(), "w", encoding="utf-8") as f:
         json.dump(context.user_data, f, ensure_ascii=False, indent=2)
 
     # Для стационара — хирургия

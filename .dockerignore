@@ -2,8 +2,11 @@
 .gitignore
 .vscode
 .venv
+venv
+env
 __pycache__/
 *.pyc
+*.py[cod]
 .pytest_cache/
 build/
 dist/
@@ -11,3 +14,17 @@ dist/
 .coverage
 **/.DS_Store
 .github/
+
+# Secrets must never be copied into an image
+.env
+**/.env
+.env.*
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Runtime-only files
+current_params.json
+**/current_params.json
+log.txt
+**/log.txt
